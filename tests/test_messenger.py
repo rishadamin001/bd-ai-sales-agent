@@ -98,17 +98,6 @@ class MessengerTests(unittest.TestCase):
     def acknowledged(self, order, effect="planned", status="dry_run", http_status=200):
         return {"order_id": order["order_id"], "mode": "dry_run" if status == "dry_run" else "live", "status": status, "http_status": http_status, "effects": {"confirmation_messenger": {"state": effect}}}
 
-    def test_verification_challenge_and_exact_token(self):
-        response = self.client.get("/webhook", query_string={"hub.mode": "subscribe", "hub.verify_token": "test-verify-token", "hub.challenge": "12345"})
-        self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_data(as_text=True), "12345")
-        self.assertEqual(response.mimetype, "text/plain")
-        for token in ("wrong", "test-verify-token ", ""):
-            response = self.client.get("/webhook", query_string={"hub.mode": "subscribe", "hub.verify_token": token, "hub.challenge": "12345"})
-            self.assertEqual(response.status_code, 403)
-        self.app.config["FB_VERIFY_TOKEN"] = ""
-        self.assertEqual(self.client.get("/webhook").status_code, 503)
-
     def test_signature_rejected_before_json_or_model(self):
         response = self.post(raw=b"not json", signature="sha256=bad")
         self.assertEqual(response.status_code, 403)

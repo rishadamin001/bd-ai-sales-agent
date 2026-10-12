@@ -505,23 +505,12 @@ class MessengerProcessor:
 
 
 def register_messenger(app, config, order_handler=None):
-    """Mount GET/POST /webhook and return its controllable queue processor."""
+    """Mount signed POST /webhook and return its controllable queue processor."""
     processor = MessengerProcessor(config, order_handler)
     app.extensions["messenger_processor"] = processor
 
-    @app.route("/webhook", methods=["GET", "POST"])
+    @app.route("/webhook", methods=["POST"])
     def messenger_webhook():
-        if request.method == "GET":
-            expected = config.get("FB_VERIFY_TOKEN")
-            if not expected:
-                return Response("Webhook verification is not configured.", status=503)
-            token = request.args.get("hub.verify_token", "")
-            if request.args.get("hub.mode") != "subscribe" or not hmac.compare_digest(token.encode(), str(expected).encode()):
-                return Response("Verification failed.", status=403)
-            challenge = request.args.get("hub.challenge")
-            if challenge is None or not 1 <= len(challenge) <= 2000:
-                return Response("Invalid challenge.", status=400)
-            return Response(challenge, content_type="text/plain")
         secret = config.get("FB_APP_SECRET")
         if not secret:
             return Response("Webhook authentication is not configured.", status=503)

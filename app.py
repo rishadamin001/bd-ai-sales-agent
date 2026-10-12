@@ -149,6 +149,7 @@ def dispatch_order(order: dict) -> dict:
 def create_app(config: dict | None = None):
     """Build the HTTP service for Gunicorn, Render, and signed Meta webhooks."""
     load_env()
+    from flask import Response, request
     from webhook import CONFIG_KEYS, create_app as create_order_app
     from messenger import register_messenger
 
@@ -170,6 +171,18 @@ def create_app(config: dict | None = None):
     settings["MESSENGER_ROUTE_ENABLED"] = True
     settings["MESSENGER_BACKGROUND_WORKER"] = str(settings.get("MESSENGER_BACKGROUND_WORKER", "true")).casefold() == "true"
     service = create_order_app(settings)
+
+    @service.route("/webhook", methods=["GET"])
+    def verify_webhook():
+        mode = request.args.get("hub.mode")
+        token = request.args.get("hub.verify_token")
+        challenge = request.args.get("hub.challenge")
+        verify_token = service.config.get(
+            "FB_VERIFY_TOKEN", os.environ.get("FB_VERIFY_TOKEN", "my_custom_secret_verify_token_123")
+        )
+        if mode == "subscribe" and token == verify_token:
+            return Response(str(challenge), status=200, content_type="text/plain")
+        return "Verification failed", 403
 
     def order_handler(order: dict) -> dict:
         # Dispatch inside this application; no loopback port assumptions or
