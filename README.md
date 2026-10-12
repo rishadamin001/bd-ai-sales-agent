@@ -1,8 +1,10 @@
 # Aura — Bangladesh AI Sales Agent
 
-Aura runs a Banglish, Bangla, or English sales chat using `gemini-2.5-flash`. It reads the merchant's Markdown prompt, delivery rates, and catalog, validates orders in Python, and can forward confirmed orders to an authenticated Flask webhook.
+Aura runs a Banglish, Bangla, or English sales chat using `gemini-2.5-flash`. It reads the merchant's Markdown prompt, delivery rates, and catalog, validates orders in Python, and supports Facebook Page conversations plus an authenticated order webhook.
 
-The bundled inventory is **sample data**. The default delivery mode is **dry run**, which makes no courier, Sheets, or Messenger API calls. Replace the sample catalog with approved prices and stock before using real customer orders.
+The bundled inventory is **sample data**. The default fulfillment mode is **dry run**, which makes no courier, Sheets, or order-notification API calls. Inbound Messenger replies still use Gemini and Meta when configured. Replace the sample catalog with approved prices and stock before using real customer orders.
+
+For cloud hosting and Page testing, follow [DEPLOYMENT.md](DEPLOYMENT.md). It covers the free Render Blueprint, `/webhook` verification and signed message handling, required credentials, and the storage upgrade needed before live fulfillment.
 
 ## Project files
 
@@ -11,10 +13,12 @@ The bundled inventory is **sample data**. The default delivery mode is **dry run
 | `SYSTEM_PROMPT.md` | Aura's role, language matching, workflows, negotiation rules, address parser, order JSON, and examples |
 | `DELIVERY_RATES.md` | Dhaka City ৳70/24–48 hours; suburbs ৳100/2–3 days; outside Dhaka ৳130–150/2–4 days; phone validation |
 | `PRODUCT_CATALOG.md` | Six sample products with IDs, prices, discount floors, stock, and alternatives |
-| `app.py` | Interactive Gemini chat with confirmation gating and optional `--dispatch` |
+| `app.py` | Interactive Gemini chat, confirmation gating, and Render WSGI entrypoint |
+| `messenger.py` | Signed Meta webhook, durable local jobs, and background Aura replies |
 | `orders.py`, `order.schema.json` | Validation, catalog loading, JSON extraction, and payload schema |
 | `webhook.py`, `integrations.py` | Durable courier, Sheets, Messenger, and tracking bridge |
 | `.env.example`, `requirements.txt` | Configuration template and dependencies |
+| `Procfile`, `gunicorn.conf.py`, `render.yaml`, `DEPLOYMENT.md` | Gunicorn serving and Render/Page deployment guide |
 | `examples/order_confirmed.json` | Synthetic order for dry-run testing |
 | `tests/` | Behavioral tests with fake Gemini and mocked provider calls |
 
@@ -31,7 +35,7 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-Edit `.env` locally. Set `GEMINI_API_KEY` using a key from [Google AI Studio](https://aistudio.google.com/apikey). Gemini's free tier has eligibility, rate, and quota limits; it is not unlimited free usage. Review [Google's current pricing](https://ai.google.dev/gemini-api/docs/pricing).
+Edit `.env` locally. Set `GEMINI_API_KEY` using a key from [Google AI Studio](https://aistudio.google.com/apikey). Gemini's free tier has eligibility, rate, and quota limits; it is not unlimited free usage. Model access depends on your account; `GEMINI_MODEL` can select an approved available model if the requested 2.5 Flash model is unavailable. Review [Google's current pricing](https://ai.google.dev/gemini-api/docs/pricing) and [model access/deprecation notes](https://ai.google.dev/gemini-api/docs/deprecations/).
 
 ```bash
 python app.py
@@ -57,6 +61,8 @@ The JSON format retains customer, pricing, and logistics fields and adds stable 
 
 ## Run the webhook
 
+The combined production service starts with `gunicorn app:app`; Gunicorn binds to `0.0.0.0:$PORT` using `gunicorn.conf.py`. It serves the order routes below plus signed Facebook Messenger `GET/POST /webhook`. Use one worker until the queue and state are moved to a shared implementation. For local development, `python app.py --serve` starts the combined Flask server. See [DEPLOYMENT.md](DEPLOYMENT.md) for the Render setup.
+
 Generate a long random secret and put it in `.env` as `WEBHOOK_SECRET`:
 
 ```bash
@@ -69,11 +75,13 @@ The development server listens on `127.0.0.1:5000`. In another terminal, run `py
 | Route | Behavior |
 | --- | --- |
 | `GET /health` | Health and delivery mode |
+| `GET /webhook` | Meta callback verification using `FB_VERIFY_TOKEN` |
+| `POST /webhook` | Meta message/postback events; requires a valid App Secret signature |
 | `POST /webhooks/orders` | Receive a validated `ORDER_CONFIRMED` object |
 | `GET /webhooks/orders/<order_id>` | Inspect saved effect states without replaying an order |
 | `POST /webhooks/tracking` | Receive a trusted normalized `TRACKING_UPDATED` event |
 
-All routes except health require `Authorization: Bearer <WEBHOOK_SECRET>`. Courier callbacks must first be authenticated and transformed by your own trusted adapter; provider callback formats are not accepted directly. The order endpoint trusts its authenticated sender to have obtained customer consent. Text generated in a Codex conversation is not automatically intercepted: this chat bridge or another authorized integration must POST the JSON.
+The `/webhooks/orders` and `/webhooks/tracking` routes require `Authorization: Bearer <WEBHOOK_SECRET>`. Meta `/webhook` uses its verification token for GET and App Secret signature for POST. Courier callbacks must first be authenticated and transformed by your own trusted adapter; provider callback formats are not accepted directly. The order endpoint trusts its authenticated sender to have obtained customer consent. Text generated in a Codex conversation is not automatically intercepted: this chat bridge or another authorized integration must POST the JSON.
 
 Submit the synthetic example **while the webhook is in dry-run mode**:
 
@@ -90,7 +98,7 @@ PY
 
 SQLite records each order and each external effect. An identical retry resumes only safely failed effects; it does not rebook an accepted shipment or resend successful notifications. Reusing an ID for different details or changing its dry-run/live mode returns a conflict. Ambiguous timeouts or provider responses require reconciliation and are not retried automatically. Preserve the database: deleting it removes duplicate protection. Customer records and runtime databases are excluded from Git.
 
-To enable delivery, configure the providers below and set `DELIVERY_MODE=live`. Use new IDs for live orders after testing. Deploy behind HTTPS with a production WSGI server, durable state, and injected environment variables; do not expose the Flask development server. A WSGI entrypoint is `webhook:create_app()`. Production must inject its environment; `.env` autoload occurs when running the supplied scripts. For multiple hosts, replace local SQLite with a shared database/job queue.
+To enable delivery, configure the providers below and set `DELIVERY_MODE=live`. Use new IDs for live orders after testing. Deploy behind HTTPS with a production WSGI server, durable state, and injected environment variables; do not expose the Flask development server. The combined WSGI entrypoint is `app:app`; the standalone order-only entrypoint remains `webhook:create_app()`. Render live fulfillment also requires `FULFILLMENT_STATE_DURABLE=true` after durable storage is actually provisioned and verified. The free Blueprint keeps that setting false and fulfillment in dry run. For multiple hosts, replace local SQLite with a shared database/job queue.
 
 ## Courier setup
 
@@ -127,7 +135,9 @@ Alternatively, configure `SHEETS_WEBHOOK_URL`. In Zapier create **Catch Hook →
 
 ## Messenger confirmations and tracking
 
-Set `META_PAGE_ACCESS_TOKEN`, `META_PAGE_ID`, and a supported `META_GRAPH_VERSION`. Your app/Page needs `pages_messaging`. The trusted channel supplies top-level `messenger_psid` and timezone-aware ISO `messenger_last_interaction_at`; a phone number is not a Messenger ID. An optional trusted `confirmation_message` can use the shopper's language.
+For Page conversations, set `FB_APP_SECRET`, `FB_VERIFY_TOKEN`, `FB_PAGE_ACCESS_TOKEN`, `FB_PAGE_ID`, `META_GRAPH_VERSION`, and `GEMINI_API_KEY`, then register the real Render `/webhook` URL and subscribe the Page as described in [DEPLOYMENT.md](DEPLOYMENT.md). The worker records incoming message IDs, processes messages in the background, and sends Aura replies. Local SQLite state must be preserved for durable deduplication.
+
+The order/notification bridge also accepts `META_PAGE_ACCESS_TOKEN` and `META_PAGE_ID`; the combined server maps `FB_*` credentials to these outbound settings. Your app/Page needs `pages_messaging`. The trusted channel supplies top-level `messenger_psid` and timezone-aware ISO `messenger_last_interaction_at`; a phone number is not a Messenger ID. An optional trusted `confirmation_message` can use the shopper's language.
 
 The order endpoint sends confirmation and, when an accepted booking returns a tracking code, a separate tracking alert. A later courier adapter can send:
 
@@ -142,7 +152,7 @@ The order endpoint sends confirmation and, when an accepted booking returns a tr
 
 Identical tracking events are deduplicated. Ordinary Messenger responses send only within the customer's 24-hour response window; missing identity/window data or later updates are recorded as skipped. For later notifications, integrate a currently approved Meta mechanism and its consent rules. Deprecated message tags are not used.
 
-These are **Messenger messages**, not SMS. Actual SMS requires a separate SMS provider or verified courier notification service. Tracking callbacks, inbound Messenger routing, and Shopify/WooCommerce connectors are deployment-specific additions; writing a prompt does not configure them.
+These are **Messenger messages**, not SMS. Actual SMS requires a separate SMS provider or verified courier notification service. Authenticated courier tracking callbacks and Shopify/WooCommerce connectors remain deployment-specific additions.
 
 ## Validation and provider references
 
@@ -151,7 +161,7 @@ python -m unittest discover -s tests -v
 python -m compileall -q app.py orders.py webhook.py integrations.py
 ```
 
-All 58 tests passed during project setup. A local HTTP smoke test also verified dry-run submission, identical replay, and status inspection with zero external calls. Tests cover consent, prices, stock, addresses, phones, JSON parsing, authentication, dry run, idempotency, failures, tracking, and adapter payloads. A live Gemini conversation and provider integrations require credentials and are not established by these tests.
+All 96 tests passed during deployment preparation. A local Gunicorn HTTP smoke test verified Render-style port binding, Meta callback verification, signed message intake, and authentication with zero external API calls. Automated tests use fake Gemini and mocked provider calls to cover consent timing, prices, stock, addresses, phones, JSON parsing, dry run, idempotency, failures, tracking, and adapter payloads. Live integrations require credentials, network access, and authorized accounts; these tests do not establish a live Page deployment.
 
 - [Google Gen AI Python SDK](https://github.com/googleapis/python-genai)
 - [Steadfast create-order contract](https://github.com/steadfast-it/SteadFast-Courier-Laravel-Package)

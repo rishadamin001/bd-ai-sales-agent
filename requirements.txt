@@ -1,3 +1,4 @@
 google-genai>=1.0,<2.0
 flask>=3.1,<4.0
+gunicorn>=23,<26
 google-auth[requests]>=2.48,<3.0

@@ -210,6 +210,9 @@ def create_app(test_config=None):
     def authenticate():
         if request.path == "/health":
             return None
+        if request.path == "/webhook" and app.config.get("MESSENGER_ROUTE_ENABLED"):
+            # Meta has its own challenge and raw-body HMAC authentication.
+            return None
         expected = ("Bearer " + app.config["WEBHOOK_SECRET"]).encode("utf-8")
         supplied = request.headers.get("Authorization", "").encode("utf-8")
         if not hmac.compare_digest(expected, supplied):

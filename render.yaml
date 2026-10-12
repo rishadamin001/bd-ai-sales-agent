@@ -1,0 +1,37 @@
+services:
+  - type: web
+    name: bd-ai-sales-agent
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    envVars:
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-2.5-flash
+      - key: FB_APP_SECRET
+        sync: false
+      - key: FB_PAGE_ACCESS_TOKEN
+        sync: false
+      - key: FB_VERIFY_TOKEN
+        sync: false
+      - key: FB_PAGE_ID
+        value: "61595323019908"
+      - key: META_GRAPH_VERSION
+        sync: false
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      - key: DELIVERY_MODE
+        value: dry_run
+      - key: FULFILLMENT_STATE_DURABLE
+        value: "false"
+      - key: ORDER_DB_PATH
+        value: work/orders.sqlite3
+      - key: MESSENGER_DB_PATH
+        value: work/messenger.sqlite3
+      - key: MESSENGER_BACKGROUND_WORKER
+        value: "true"

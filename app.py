@@ -7,6 +7,7 @@ import json
 import os
 import re
 import sys
+import threading
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
@@ -145,12 +146,83 @@ def dispatch_order(order: dict) -> dict:
         return json.load(response)
 
 
+def create_app(config: dict | None = None):
+    """Build the HTTP service for Gunicorn, Render, and signed Meta webhooks."""
+    load_env()
+    from webhook import CONFIG_KEYS, create_app as create_order_app
+    from messenger import register_messenger
+
+    server_keys = (*CONFIG_KEYS, "FB_APP_SECRET", "FB_PAGE_ACCESS_TOKEN", "FB_PAGE_ID", "FB_VERIFY_TOKEN",
+                   "GEMINI_API_KEY", "GEMINI_MODEL", "MESSENGER_DB_PATH", "MESSENGER_BACKGROUND_WORKER",
+                   "MESSENGER_HISTORY_MESSAGES", "RENDER", "FULFILLMENT_STATE_DURABLE")
+    settings = {key: os.environ[key] for key in server_keys if key in os.environ}
+    if config:
+        settings.update(config)
+    if settings.get("FB_PAGE_ACCESS_TOKEN"):
+        settings["META_PAGE_ACCESS_TOKEN"] = settings["FB_PAGE_ACCESS_TOKEN"]
+    if settings.get("FB_PAGE_ID"):
+        settings["META_PAGE_ID"] = settings["FB_PAGE_ID"]
+    # Free Render instances have ephemeral storage; never treat their local DB
+    # as durable fulfillment state just because it exists for this process.
+    durable = str(settings.get("FULFILLMENT_STATE_DURABLE", "false")).casefold() == "true"
+    if settings.get("RENDER") and settings.get("DELIVERY_MODE") == "live" and not durable:
+        raise RuntimeError("Live fulfillment on Render requires verified durable state; keep DELIVERY_MODE=dry_run for a free demo.")
+    settings["MESSENGER_ROUTE_ENABLED"] = True
+    settings["MESSENGER_BACKGROUND_WORKER"] = str(settings.get("MESSENGER_BACKGROUND_WORKER", "true")).casefold() == "true"
+    service = create_order_app(settings)
+
+    def order_handler(order: dict) -> dict:
+        # Dispatch inside this application; no loopback port assumptions or
+        # outbound HTTP retries when Gunicorn binds Render's assigned port.
+        with service.test_client() as internal_client:
+            response = internal_client.post(
+                "/webhooks/orders", json=order,
+                headers={"Authorization": "Bearer " + service.config["WEBHOOK_SECRET"]},
+            )
+        result = response.get_json() or {}
+        result["http_status"] = response.status_code
+        return result
+
+    processor = register_messenger(service, service.config, order_handler=order_handler)
+    service.extensions["messenger_processor"] = processor
+    return service
+
+
+class LazyApplication:
+    """Initialize the WSGI app once without changing imports for CLI users."""
+
+    def __init__(self):
+        self._application = None
+        self._lock = threading.Lock()
+
+    def application(self):
+        if self._application is None:
+            with self._lock:
+                if self._application is None:
+                    self._application = create_app()
+        return self._application
+
+    def __call__(self, environ, start_response):
+        return self.application()(environ, start_response)
+
+    def run(self, **kwargs):
+        return self.application().run(**kwargs)
+
+
+app = LazyApplication()
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--message", help="Send one message instead of opening an interactive chat.")
     parser.add_argument("--dispatch", action="store_true", help="Forward validated confirmed orders to the webhook.")
+    parser.add_argument("--serve", action="store_true", help="Run the HTTP service; Render uses gunicorn app:app.")
     args = parser.parse_args(argv)
     load_env()
+    if args.serve:
+        port = int(os.environ.get("PORT", 5000))
+        app.run(host="0.0.0.0", port=port)
+        return 0
     api_key = os.environ.get("GEMINI_API_KEY", "")
     if not api_key or api_key == "YOUR_GEMINI_API_KEY":
         parser.error("Set GEMINI_API_KEY in your environment or local .env file.")
