@@ -1,0 +1,29 @@
+{
+  "order_event": "ORDER_CONFIRMED",
+  "order_id": "demo_order_001",
+  "customer": {
+    "full_name": "Demo Customer",
+    "phone_number": "01700000000",
+    "address_line": "House 12, Road 4, Sector 3, Uttara",
+    "thana": "Uttara",
+    "district": "Dhaka",
+    "zone": "INSIDE_DHAKA"
+  },
+  "items": [
+    {
+      "product_id": "AURA-EARBUDS-003",
+      "quantity": 1,
+      "unit_price_bdt": 2000
+    }
+  ],
+  "pricing_summary": {
+    "subtotal_bdt": 2000,
+    "discount_applied_bdt": 200,
+    "delivery_charge_bdt": 70,
+    "grand_total_bdt": 1870
+  },
+  "logistics": {
+    "courier_partner": "STEADFAST",
+    "payment_method": "CASH_ON_DELIVERY"
+  }
+}

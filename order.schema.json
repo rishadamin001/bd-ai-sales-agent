@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:bd-ai-sales-agent:order",
+  "title": "Aura Bangladesh order",
+  "description": "Canonical order after normalization. orders.py additionally validates catalog stock, regular prices, discount limits, geographic zones, delivery rates and arithmetic. ORDER_DRAFT is for review only; fulfillment accepts ORDER_CONFIRMED. Integration fields must originate from a trusted server, never the model.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["order_event", "order_id", "customer", "items", "pricing_summary", "logistics"],
+  "properties": {
+    "order_event": {"type": "string", "enum": ["ORDER_DRAFT", "ORDER_CONFIRMED"]},
+    "order_id": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"},
+    "customer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["full_name", "phone_number", "address_line", "thana", "district", "zone"],
+      "properties": {
+        "full_name": {"type": "string", "minLength": 1, "maxLength": 100},
+        "phone_number": {"type": "string", "pattern": "^01[3-9][0-9]{8}$", "minLength": 11, "maxLength": 11},
+        "address_line": {"type": "string", "minLength": 10, "maxLength": 500, "description": "Street/house or rural village/union/landmark details, not only a city or district."},
+        "thana": {"type": "string", "minLength": 1, "maxLength": 100},
+        "district": {"type": "string", "minLength": 1, "maxLength": 100},
+        "zone": {"type": "string", "enum": ["INSIDE_DHAKA", "DHAKA_SUBURBS", "OUTSIDE_DHAKA"]},
+        "remote_area": {"type": "boolean", "description": "Merchant/courier verification is required. Only OUTSIDE_DHAKA; true selects the ৳150 rate."}
+      }
+    },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 100,
+      "uniqueItems": true,
+      "description": "Product IDs must be unique. unit_price_bdt is the catalog regular price; discounts belong in pricing_summary.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["product_id", "quantity", "unit_price_bdt"],
+        "properties": {
+          "product_id": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[A-Za-z0-9][A-Za-z0-9_.-]{0,63}$"},
+          "quantity": {"type": "integer", "minimum": 1, "maximum": 100},
+          "unit_price_bdt": {"type": "integer", "minimum": 1}
+        }
+      }
+    },
+    "pricing_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subtotal_bdt", "discount_applied_bdt", "delivery_charge_bdt", "grand_total_bdt"],
+      "properties": {
+        "subtotal_bdt": {"type": "integer", "minimum": 0},
+        "discount_applied_bdt": {"type": "integer", "minimum": 0, "description": "No more than floor(subtotal_bdt / 10). The order-wide discount applies proportionally and must honor each product's catalog minimum unit price."},
+        "delivery_charge_bdt": {"type": "integer", "enum": [0, 70, 100, 130, 150], "description": "Dhaka city 70; suburbs 100; outside 130; verified remote outside 150. Zero only without a product discount."},
+        "grand_total_bdt": {"type": "integer", "minimum": 0, "description": "subtotal_bdt - discount_applied_bdt + delivery_charge_bdt"}
+      }
+    },
+    "logistics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["courier_partner", "payment_method"],
+      "properties": {
+        "courier_partner": {"type": "string", "enum": ["STEADFAST", "PATHAO", "REDX"], "description": "REDX is a valid selection but has no implemented adapter."},
+        "payment_method": {"type": "string", "const": "CASH_ON_DELIVERY"}
+      }
+    },
+    "courier_metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Trusted merchant settings from courier serviceability data; model output must not supply these IDs.",
+      "properties": {
+        "recipient_city": {"type": "integer", "minimum": 1},
+        "recipient_zone": {"type": "integer", "minimum": 1},
+        "recipient_area": {"type": "integer", "minimum": 1},
+        "item_weight_kg": {"type": "number", "exclusiveMinimum": 0}
+      }
+    },
+    "messenger_psid": {"type": "string", "minLength": 1, "maxLength": 64, "pattern": "^[0-9]+$", "description": "Trusted platform-provided customer Messenger identity."},
+    "messenger_last_interaction_at": {"type": "string", "format": "date-time", "minLength": 1, "maxLength": 64, "description": "Trusted timezone-aware ISO8601 timestamp used by Messenger policy checks."},
+    "confirmation_message": {"type": "string", "minLength": 1, "maxLength": 2000, "description": "Confirmation text from a trusted application sender."}
+  }
+}
