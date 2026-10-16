@@ -5,6 +5,7 @@ import { database } from "../scripts/db.mjs";
 import { transition, phone, zone, quote } from "../src/engine.mjs";
 import {
   handleEvent,
+  classify,
   all,
   first,
   run,
@@ -16,6 +17,13 @@ const schema = await readFile(
   new URL("../schema.sql", import.meta.url),
   "utf8",
 );
+test('Cloudflare parsed JSON and chat-completion text both classify correctly', async()=>{
+  const expected={intent:'product',product_id:'hobbit'};
+  for(const response of [{response:expected},{choices:[{message:{content:JSON.stringify(expected)}}]}]){
+    const result=await classify({AI_ENABLED:'true',AI_MODEL:'test',AI:{run:async()=>response}},'Bilbo adventure',[]);
+    assert.deepEqual(result,expected);
+  }
+});
 function env() {
   const DB = database();
   DB.exec(schema);

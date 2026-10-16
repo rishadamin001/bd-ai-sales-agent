@@ -160,6 +160,19 @@ async function route(req, env, ctx) {
       return json({ error: "Sign in to the private demo dashboard" }, 401);
     if (req.method !== "GET" && req.headers.get("origin") !== u.origin)
       return json({ error: "Origin not allowed" }, 403);
+    if (p === "/api/ai-check" && req.method === "POST") {
+      if (!env.AI) return json({ ok: false, error: "AI binding missing" });
+      try {
+        const result = await env.AI.run(env.AI_MODEL, {
+          messages: [{role: "user", content: 'Return only this JSON: {"intent":"product","product_id":"hobbit"} /no_think'}],
+          max_tokens: 256,
+          temperature: 0,
+        });
+        return json({ok:true, model:env.AI_MODEL, result});
+      } catch (error) {
+        return json({ok:false, model:env.AI_MODEL, error:String(error.message).slice(0,500)});
+      }
+    }
     if (p === "/api/status")
       return json({
         local: env.LOCAL_DEMO === "true",

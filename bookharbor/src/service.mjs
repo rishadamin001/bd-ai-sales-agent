@@ -42,6 +42,8 @@ export async function classify(env, text, products) {
         timer = setTimeout(() => reject(Error("AI timeout")), 7000);
       }),
     ]);
+    // Workers AI can return already-parsed JSON in response as well as chat choices.
+    if (r.response && typeof r.response === "object" && !Array.isArray(r.response)) return r.response;
     const raw = r.response || r.choices?.[0]?.message?.content || "";
     return JSON.parse(
       raw

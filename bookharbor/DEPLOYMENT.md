@@ -1,5 +1,11 @@
 # Deploy and connect Messenger — free course demo
 
+Current deployment: https://bookharbor-mis465.bookharbor-mis465.workers.dev
+
+The database and deployment are already provisioned in the owner's account. The website password and Meta verify token are in the ignored local file `work/OWNER-ACCESS.txt`. Do not upload this file to GitHub. The initial Cloudflare authorization succeeded using `wrangler login --device`, which avoids localhost callback failures.
+
+To securely save rotated Meta secrets on this computer, run `scripts/configure-facebook.ps1` in PowerShell. Actual Messenger delivery still requires the Meta webhook setup below.
+
 ## 1. Cloudflare login
 
 Use the Free plan. No custom domain or payment card is required by this project. Do not upgrade when a quota is exhausted.
