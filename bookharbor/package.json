@@ -1,0 +1,20 @@
+{
+  "name": "bookharbor-mis465",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/local.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "deploy": "wrangler deploy",
+    "login": "wrangler login",
+    "db:create": "wrangler d1 create bookharbor-mis465",
+    "db:migrate": "wrangler d1 execute bookharbor-mis465 --remote --file=schema.sql"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  },
+  "engines": {
+    "node": ">=22.13"
+  }
+}
