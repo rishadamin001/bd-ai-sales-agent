@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>BookHarbor · Your next chapter</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script src="/app.js" type="module"></script>
+  </head>
+  <body>
+    <aside class="sidebar">
+      <a class="brand" href="/"
+        >▤ <span>BookHarbor<small>BOOKS & CONVERSATIONS</small></span></a
+      >
+      <div class="workspace">MIS 465 WORKSPACE</div>
+      <nav>
+        <button class="nav active" data-tab="shop">▦ &nbsp; Bookshop</button
+        ><button class="nav" data-tab="orders">
+          ▤ &nbsp; Orders <span id="orderCount">0</span></button
+        ><button class="nav" data-tab="inbox">◌ &nbsp; Conversations</button
+        ><button class="nav" data-tab="setup">⚙ &nbsp; Demo guide</button>
+      </nav>
+      <div class="side-bottom">
+        <div class="avatar">RA</div>
+        <div>
+          Rishad’s course project<small
+            >IUB · Web Development & E-commerce</small
+          >
+        </div>
+      </div>
+    </aside>
+    <main>
+      <header>
+        <span id="breadcrumb">Workspace / <strong>Bookshop</strong></span>
+        <div class="header-actions">
+          <span class="pill">ACADEMIC DEMO</span
+          ><button id="refresh" class="icon-button" title="Refresh dashboard">
+            ↻ Refresh</button
+          ><button id="logout" class="icon-button">Sign out</button>
+        </div>
+      </header>
+      <div id="notice" role="status">
+        Fictional inventory. No payments or real deliveries. Please use
+        fictional customer details.
+      </div>
+      <section id="shop" class="page active">
+        <div class="intro">
+          <div>
+            <div class="eyebrow">A LITTLE CURIOSITY. A NEW CHAPTER.</div>
+            <h1>Good books.<br /><em>Better conversations.</em></h1>
+            <p>
+              A bookshop assistant that speaks your language.<br />Browse a
+              title, ask in Banglish, and try a complete demo order.
+            </p>
+            <div class="intro-chips">
+              <span>বাংলা</span><span>Banglish</span><span>English</span>
+            </div>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <div class="orbit"></div>
+            <div class="hero-book b1">
+              <small>J. R. R. TOLKIEN</small><b>THE<br />HOBBIT</b
+              ><i>There and<br />back again.</i><span>△ ◇ △</span>
+            </div>
+            <div class="hero-book b2">
+              <small>LEIGH BARDUGO</small><b>SIX<br />OF<br />CROWS</b
+              ><span>✦</span>
+            </div>
+            <div class="book-note">Find your next favourite ↗</div>
+          </div>
+        </div>
+        <div class="stats">
+          <div>
+            <small>CURATED TITLES</small
+            ><strong id="titleStat">8 <span>books to discover</span></strong>
+          </div>
+          <div>
+            <small>DELIVERY FROM</small
+            ><strong>৳70 <span>demo flat rates</span></strong>
+          </div>
+          <div>
+            <small>ASSISTANT</small><strong id="engineStat">Checking…</strong>
+          </div>
+        </div>
+        <div class="section-title">
+          <div>
+            <h2>The bookshelf</h2>
+            <p>Sample prices & stock, inspired by your reference images.</p>
+          </div>
+          <label class="search"
+            ><span>⌕</span
+            ><input
+              id="search"
+              placeholder="Find a book or author…"
+              aria-label="Search catalogue"
+          /></label>
+        </div>
+        <div class="filters" id="filters">
+          <button class="selected" data-filter="All">All books</button
+          ><button data-filter="Fantasy">Fantasy</button
+          ><button data-filter="Fiction">Fiction</button
+          ><button data-filter="Manga">Manga & comics</button
+          ><button data-filter="Box set">Box sets</button>
+        </div>
+        <div class="catalog" id="catalog"></div>
+      </section>
+      <section id="orders" class="page">
+        <div class="section-title">
+          <div>
+            <div class="eyebrow">FROM CONVERSATION TO CHECKOUT</div>
+            <h1>Demo orders</h1>
+            <p>
+              Orders appear here only after the customer confirms the final
+              total.
+            </p>
+          </div>
+        </div>
+        <div id="ordersList"></div>
+      </section>
+      <section id="inbox" class="page">
+        <div class="section-title">
+          <div>
+            <div class="eyebrow">KEEP THE HUMAN IN THE LOOP</div>
+            <h1>Conversations</h1>
+            <p>
+              Review messages and resume conversations after human handover.
+            </p>
+          </div>
+          <button id="pause" class="button">Pause assistant</button>
+        </div>
+        <div id="conversations"></div>
+        <h2>Connection activity</h2>
+        <p class="muted">
+          “Configured” means credentials exist. Only a delivered Facebook reply
+          proves the connection works.
+        </p>
+        <div id="events"></div>
+      </section>
+      <section id="setup" class="page">
+        <div class="eyebrow">YOUR FIVE-MINUTE PRESENTATION</div>
+        <h1>Show the whole journey.</h1>
+        <p>
+          Start with the browser demo, then repeat the same conversation in your
+          connected Facebook Page.
+        </p>
+        <div class="guide-grid">
+          <article>
+            <b>01 / Ask naturally</b>
+            <h2>“Hobbit price koto?”</h2>
+            <p>
+              Show product lookup, price, edition, and available stock. Try
+              বাংলা and English too.
+            </p>
+          </article>
+          <article>
+            <b>02 / Capture an order</b>
+            <h2>“Order Hobbit”</h2>
+            <p>
+              Enter 2 copies → blue → Demo Reader → 01700000000 → House 1, Road
+              2, Mirpur, Dhaka.
+            </p>
+          </article>
+          <article>
+            <b>03 / Check the maths</b>
+            <h2>৳1,300 + ৳70 = ৳1,370</h2>
+            <p>
+              Reply CONFIRM. Open Orders to show the saved record. No money is
+              collected.
+            </p>
+          </article>
+          <article>
+            <b>04 / Show recovery</b>
+            <h2>“human”</h2>
+            <p>
+              The assistant pauses. Open Conversations and choose Resume. Also
+              try an invalid phone number and an out-of-stock book.
+            </p>
+          </article>
+        </div>
+        <div class="setup-panel">
+          <h2>Connection checklist</h2>
+          <div id="connection"></div>
+          <p>
+            Website and Messenger use the same server logic and database. Local
+            preview uses fixed rules. Cloudflare AI is available only after
+            deployment and account setup.
+          </p>
+          <p>
+            Delivery policy: Dhaka city ৳70, suburbs ৳100, outside Dhaka ৳130
+            per demo order. Gift wrap is free. These are illustrative store
+            rates, not courier quotations.
+          </p>
+          <p>
+            Privacy: This is a private academic test. Use fictional data only.
+            Demo conversations and orders are stored for presentation. Ask the
+            project owner to delete test data after grading. Do not submit
+            payment information.
+          </p>
+          <a href="/privacy.html">Privacy & data deletion</a>
+        </div>
+      </section>
+      <footer>
+        BOOKHARBOR BD
+        <span>Built for IUB · MIS 465 · Academic demonstration</span>
+      </footer>
+    </main>
+    <section class="chat" aria-label="Bookshop assistant">
+      <div class="chat-head">
+        <div class="bot-avatar">✦</div>
+        <div>
+          <strong>Harbor Assistant</strong
+          ><small id="chatStatus">Your multilingual book buddy</small>
+        </div>
+        <button id="newChat" title="Start a new conversation">↻</button>
+      </div>
+      <div class="chat-disclosure">Automated demo · Fictional details only</div>
+      <div id="messages" class="messages" aria-live="polite"></div>
+      <div class="quick" id="quick">
+        <button data-message="books">Browse books</button
+        ><button data-message="delivery">Delivery</button
+        ><button data-message="human">Talk to owner</button>
+      </div>
+      <form id="chatForm">
+        <label class="sr-only" for="message">Your message</label
+        ><input
+          id="message"
+          placeholder="Ask in Bangla, Banglish, English…"
+          maxlength="1500"
+          autocomplete="off"
+          required
+        /><button id="send" aria-label="Send message">↑</button>
+      </form>
+      <div class="chat-foot" id="engineLabel">
+        Prices and orders verified by shop rules
+      </div>
+    </section>
+    <dialog id="login">
+      <form id="loginForm">
+        <div class="eyebrow">PRIVATE ASSIGNMENT WORKSPACE</div>
+        <h2>Welcome to BookHarbor.</h2>
+        <p>
+          Enter the owner demo password to test chats and view orders. Use
+          fictional information only.
+        </p>
+        <input
+          id="password"
+          type="password"
+          placeholder="Demo password"
+          autocomplete="current-password"
+          required
+        /><button class="button">Open workspace →</button>
+        <p id="loginError" role="alert"></p>
+      </form>
+    </dialog>
+  </body>
+</html>

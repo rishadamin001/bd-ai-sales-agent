@@ -12,3 +12,14 @@ data/
 orders/
 credentials*.json
 service-account*.json
+
+# Private runtime and access files
+**/OWNER-ACCESS.txt
+**/.dev.vars*
+**/work/
+**/.wrangler/
+**/node_modules/
+*.log
+*.sqlite*
+*.pem
+*.key

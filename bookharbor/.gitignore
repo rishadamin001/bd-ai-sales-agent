@@ -1,0 +1,12 @@
+node_modules/
+.wrangler/
+.dev.vars*
+.env*
+!.env.example
+*.sqlite*
+work/
+*.log
+OWNER-ACCESS.txt
+**/OWNER-ACCESS.txt
+*.pem
+*.key

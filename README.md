@@ -1,3 +1,18 @@
+# Current MIS 465 project: BookHarbor BD
+
+The working Cloudflare + Facebook Messenger assignment is in **[bookharbor/](bookharbor/README.md)**.
+
+- [Live website](https://bookharbor-mis465.bookharbor-mis465.workers.dev)
+- [Messenger testing Page](https://m.me/1270406139500514) — use an accepted Meta app role while in Development mode.
+- [Setup instructions](bookharbor/DEPLOYMENT.md), [Messenger connection](bookharbor/MESSENGER-SETUP.md), and [verification record](bookharbor/VERIFICATION.md).
+- Verified 17 October 2026: 17 tests pass; real admin-profile Messenger messages and replies work, including Cloudflare AI.
+- Run locally: `cd bookharbor`, then `npm start`. Run checks with `npm test`. Install deployment dependencies with `npm ci`.
+- Private credentials, owner access files, databases and logs are excluded. Configure your own Cloudflare secrets.
+
+The earlier Python prototype below is retained for reference; it is separate from the deployed BookHarbor app.
+
+---
+
 # Aura — Bangladesh AI Sales Agent
 
 Aura runs a Banglish, Bangla, or English sales chat using `gemini-2.5-flash`. It reads the merchant's Markdown prompt, delivery rates, and catalog, validates orders in Python, and supports Facebook Page conversations plus an authenticated order webhook.
