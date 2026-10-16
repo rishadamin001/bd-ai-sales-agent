@@ -8,7 +8,7 @@ Page: 1270406139500514. Callback: https://bookharbor-mis465.bookharbor-mis465.wo
 - Live synthetic webhook test: correct verification token returns the challenge; signed empty Page event returns 200; invalid signature returns 403. This does not prove a real Meta callback has arrived or that the stored app secret matches Meta.
 - 17 local tests pass, including signature verification, message replay protection, and postback replay protection.
 - Corrected Page to 1270406139500514, named Page for testing. The fresh token matches this Page. POST subscribed_apps for messages,messaging_postbacks returned success:true. GET subscribed_apps returns HTTP 403/code 200: Requires pages_manage_metadata permission to manage the object. Grant that permission and regenerate the Page token to complete read-back verification.
-- After the owner sent reset and Hobbit price koto, live tail showed no POST /webhook and the durable inbox contained no Facebook events. Real Messenger delivery remains unverified; ask Meta to send a sample messages webhook to isolate delivery versus app-role issues.
+- End-to-end admin-profile Messenger test succeeded after correcting the Page ID and subscribing it: live POST /webhook returned 200, logged facebook_received and facebook_send_accepted, and the owner confirmed receiving the reply. The earlier empty inbox observation was superseded by this successful test. GET subscription read-back remains blocked by missing pages_manage_metadata permission.
 - ADMIN_KEY and FB_VERIFY_TOKEN rotated in Cloudflare. Private local work/OWNER-ACCESS.txt updated. Reverify the callback in Meta using the NEW verify token.
 
 ## Finish rotation
