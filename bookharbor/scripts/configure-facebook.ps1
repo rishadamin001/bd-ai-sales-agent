@@ -2,6 +2,14 @@ $ErrorActionPreference = 'Stop'
 Set-Location $PSScriptRoot
 Set-Location ..
 $env:CLOUDFLARE_ACCOUNT_ID = 'bfd0afa1d5021b7538f589b10180d31a'
+Write-Host 'Checking access to the EXISTING deployed Worker before requesting secrets...'
+$bookharborCheck = & node node_modules/wrangler/bin/wrangler.js secret list 2>&1
+if ($LASTEXITCODE -ne 0) {
+    Write-Host 'Stopped: this sign-in cannot access the deployed BookHarbor app.'
+    Write-Host 'Sign in to Cloudflare as rishhadamin01@gmail.com (not rissshadamin01@gmail.com).'
+    Write-Host 'Do not create a new Worker when prompted. Ask Codex to restart device login.'
+    throw 'Account or existing-Worker access check failed. No secrets were uploaded.'
+}
 Write-Host 'Enter only NEW, rotated credentials. The prompts hide your input.'
 Write-Host 'First: the App Secret from your Meta developer app.'
 npx.cmd wrangler secret put FB_APP_SECRET

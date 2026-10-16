@@ -36,6 +36,15 @@ function env() {
     AI_ENABLED: "false",
   };
 }
+test('postbacks are deduplicated and unknown payloads cannot confirm an order',async()=>{
+  const e=env();
+  const event={sender:{id:'customer'},recipient:{id:e.FB_PAGE_ID},timestamp:Date.now(),postback:{payload:'CONFIRM'}};
+  const raw=JSON.stringify({object:'page',entry:[{id:e.FB_PAGE_ID,messaging:[event]}]});
+  for(let i=0;i<2;i++) await webhook(new Request('https://demo.test/webhook',{method:'POST',headers:{'x-hub-signature-256':'sha256='+await hmac(e.FB_APP_SECRET,raw)},body:raw}),e);
+  const rows=await all(e.DB,'SELECT * FROM events');
+  assert.equal(rows.length,1);
+  assert.equal(rows[0].text,'help');
+});
 async function fixture() {
   const e = env();
   return { e, p: await all(e.DB, "SELECT * FROM products") };

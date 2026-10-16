@@ -243,16 +243,21 @@ export async function drain(env) {
             signal: AbortSignal.timeout(8000),
           },
         );
-        if (!res.ok) throw Error("send");
+        const result = await res.json();
+        if (!res.ok || result.error) throw Error(`Meta HTTP ${res.status}; code ${Number(result.error?.code) || 0}; subcode ${Number(result.error?.error_subcode) || 0}`);
+        console.log(JSON.stringify({event:"facebook_send_accepted",messageId:result.message_id,at:Date.now()}));
         await run(
           env.DB,
           "UPDATE events SET status='sent',error=NULL WHERE id=?",
           event.id,
         );
-      } catch {
+      } catch (error) {
+        const detail = /^Meta HTTP \d+; code \d+; subcode \d+$/.test(error.message || "") ? error.message : "Facebook send failed or outcome uncertain; inspect Page inbox and token permissions";
+        console.error(JSON.stringify({event:"facebook_send_failed",detail}));
         await run(
           env.DB,
-          "UPDATE events SET status='failed',error='Facebook send failed or outcome uncertain; inspect Page inbox and token permissions' WHERE id=?",
+          "UPDATE events SET status='failed',error=? WHERE id=?",
+          detail,
           event.id,
         );
       }

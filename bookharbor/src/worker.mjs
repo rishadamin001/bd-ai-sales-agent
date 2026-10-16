@@ -70,21 +70,24 @@ export async function webhook(req, env) {
     )
   )
     return new Response("Invalid signature", { status: 403 });
-  const body = JSON.parse(raw);
+  let body;
+  try { body = JSON.parse(raw); } catch { return new Response("Invalid JSON", {status:400}); }
   if (body.object !== "page") return new Response("Ignored");
   for (const entry of body.entry || []) {
     if (String(entry.id) !== env.FB_PAGE_ID) continue;
     for (const e of entry.messaging || []) {
       if (
-        !e.message?.mid ||
-        e.message.is_echo ||
+        (!e.message?.mid && !e.postback) ||
+        e.message?.is_echo ||
         !e.sender?.id ||
         e.sender.id === env.FB_PAGE_ID
       )
         continue;
       if (e.recipient?.id !== env.FB_PAGE_ID) continue;
-      const text =
-        e.message.text || "Unsupported attachment. Please type a book title.";
+      const commands = { GET_STARTED: "hello", CATALOG: "catalog", DELIVERY: "delivery", HUMAN: "human" };
+      const text = e.postback
+        ? commands[e.postback.payload] || "help"
+        : e.message.text || "Unsupported attachment. Please type a book title.";
       // Future/stale callbacks do not start new responses outside the allowed window.
       const created = Number(e.timestamp);
       if (
@@ -96,11 +99,12 @@ export async function webhook(req, env) {
       await run(
         env.DB,
         "INSERT OR IGNORE INTO events(id,conversation_id,text,created) VALUES(?,?,?,?)",
-        "fb:" + e.message.mid,
+        "fb:" + (e.message?.mid || e.postback.mid || await hmac(env.FB_APP_SECRET, JSON.stringify([e.sender.id, created, e.postback.payload]))),
         "fb:" + e.sender.id,
         String(text).slice(0, 1500),
         created,
       );
+      console.log(JSON.stringify({event:"facebook_received",kind:e.postback ? "postback" : "message",at:created}));
     }
   }
   return new Response("EVENT_RECEIVED");
@@ -160,6 +164,34 @@ async function route(req, env, ctx) {
       return json({ error: "Sign in to the private demo dashboard" }, 401);
     if (req.method !== "GET" && req.headers.get("origin") !== u.origin)
       return json({ error: "Origin not allowed" }, 403);
+    if (p === "/api/facebook/subscription" && ["GET", "POST"].includes(req.method)) {
+      if (!env.FB_PAGE_ACCESS_TOKEN) return json({error:"Page token missing"},503);
+      const graph = async (path, method="GET") => {
+        const response = await fetch(`https://graph.facebook.com/${env.GRAPH_VERSION}/${path}`, {
+          method, headers:{Authorization:"Bearer " + env.FB_PAGE_ACCESS_TOKEN}, signal:AbortSignal.timeout(10000),
+          ...(method === "POST" ? {body:new URLSearchParams({subscribed_fields:"messages,messaging_postbacks"})} : {}),
+        });
+        const data = await response.json();
+        if (!response.ok || data.error) return {ok:false,http:response.status,code:data.error?.code,subcode:data.error?.error_subcode,type:data.error?.type};
+        return {ok:true,data};
+      };
+      const identity = await graph("me?fields=id,name");
+      if (!identity.ok || String(identity.data.id) !== env.FB_PAGE_ID) return json({ok:false,stage:"page-token",identity},400);
+      const write = req.method === "POST" ? await graph(`${env.FB_PAGE_ID}/subscribed_apps`, "POST") : null;
+      const read = await graph(`${env.FB_PAGE_ID}/subscribed_apps?fields=id,name,subscribed_fields`);
+      return json({ok:read.ok && (!write || write.ok),page:identity.data,write,subscription:read});
+    }
+    if (p === "/api/facebook/webhook-check" && req.method === "POST") {
+      if (!env.FB_APP_SECRET || !env.FB_VERIFY_TOKEN) return json({error:"Webhook secrets missing"},503);
+      const raw = JSON.stringify({object:"page",entry:[]});
+      const check = signature => webhook(new Request(u.origin + "/webhook", {method:"POST",headers:{"x-hub-signature-256":signature},body:raw}),env);
+      const good = await check("sha256=" + await hmac(env.FB_APP_SECRET,raw));
+      const bad = await check("sha256=invalid");
+      const verify = new URL(u.origin + "/webhook");
+      verify.search = new URLSearchParams({"hub.mode":"subscribe","hub.verify_token":env.FB_VERIFY_TOKEN,"hub.challenge":"bookharbor-check"});
+      const verification = await webhook(new Request(verify),env);
+      return json({signedPost:good.status,invalidSignature:bad.status,verificationGet:verification.status,challengeMatches:(await verification.text()) === "bookharbor-check",synthetic:true});
+    }
     if (p === "/api/ai-check" && req.method === "POST") {
       if (!env.AI) return json({ ok: false, error: "AI binding missing" });
       try {
