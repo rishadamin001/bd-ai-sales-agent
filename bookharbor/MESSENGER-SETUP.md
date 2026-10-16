@@ -1,20 +1,20 @@
 # Messenger setup and test
 
-Page: 61595323019908. Callback: https://bookharbor-mis465.bookharbor-mis465.workers.dev/webhook
+Page: 1270406139500514. Callback: https://bookharbor-mis465.bookharbor-mis465.workers.dev/webhook
 
 ## Latest verified state
 
 - Live health returns HTTP 200. Database-backed owner status works; bot is not paused.
 - Live synthetic webhook test: correct verification token returns the challenge; signed empty Page event returns 200; invalid signature returns 403. This does not prove a real Meta callback has arrived or that the stored app secret matches Meta.
 - 17 local tests pass, including signature verification, message replay protection, and postback replay protection.
-- Saved Page token rejected by Meta: HTTP 401, OAuth error 190, subcode 463. Subscription is blocked at token validation; no successful POST or GET subscription confirmation yet.
-- No real Facebook events recorded at this check. No end-to-end Messenger success claimed.
+- Corrected Page to 1270406139500514, named Page for testing. The fresh token matches this Page. POST subscribed_apps for messages,messaging_postbacks returned success:true. GET subscribed_apps returns HTTP 403/code 200: Requires pages_manage_metadata permission to manage the object. Grant that permission and regenerate the Page token to complete read-back verification.
+- After the owner sent reset and Hobbit price koto, live tail showed no POST /webhook and the durable inbox contained no Facebook events. Real Messenger delivery remains unverified; ask Meta to send a sample messages webhook to isolate delivery versus app-role issues.
 - ADMIN_KEY and FB_VERIFY_TOKEN rotated in Cloudflare. Private local work/OWNER-ACCESS.txt updated. Reverify the callback in Meta using the NEW verify token.
 
 ## Finish rotation
 
 1. In Meta Developers, open the correct app, Settings > Basic, and reset App Secret. Resetting is done by the account owner; do not paste it in chat.
-2. In Messenger API Setup, generate a fresh Page access token for Page 61595323019908 using this app. Ensure the app has messaging and Page subscription permissions. Generating a replacement alone is not proof the old token was revoked; use Meta's token/integration controls to revoke old authorization where necessary, then reconnect and generate the replacement.
+2. In Messenger API Setup, generate a fresh Page access token for Page 1270406139500514 using this app. Ensure the app has messaging and Page subscription permissions. Generating a replacement alone is not proof the old token was revoked; use Meta's token/integration controls to revoke old authorization where necessary, then reconnect and generate the replacement.
 3. Run scripts/configure-facebook.ps1 in PowerShell. It checks access to the existing deployed Worker before hidden prompts. Correct Cloudflare account is rishhadamin01@gmail.com.
 4. Open private work/OWNER-ACCESS.txt locally. In Meta's webhook configuration, keep the callback above, replace Verify Token with the new value, and select Verify and Save. Keep messages and messaging_postbacks selected.
 5. Sign in to the app dashboard with the new password in the private file. Old dashboard sessions are invalidated.
@@ -25,7 +25,7 @@ Page: 61595323019908. Callback: https://bookharbor-mis465.bookharbor-mis465.work
 
 Use your personal Facebook profile that owns/created the Meta developer app and has its Admin role. While the app is in Development mode, another tester must have an accepted Admin, Developer, or Tester role on the app. Page administration alone does not establish an app role. Do not send as the Page persona.
 
-Open https://m.me/61595323019908 and send, separately:
+Open https://m.me/1270406139500514 and send, separately:
 
 1. reset
 2. Hobbit price koto?

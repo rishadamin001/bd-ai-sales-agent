@@ -172,13 +172,13 @@ async function route(req, env, ctx) {
           ...(method === "POST" ? {body:new URLSearchParams({subscribed_fields:"messages,messaging_postbacks"})} : {}),
         });
         const data = await response.json();
-        if (!response.ok || data.error) return {ok:false,http:response.status,code:data.error?.code,subcode:data.error?.error_subcode,type:data.error?.type};
+        if (!response.ok || data.error) return {ok:false,http:response.status,code:data.error?.code,subcode:data.error?.error_subcode,type:data.error?.type,message:String(data.error?.message || '').replaceAll(env.FB_PAGE_ACCESS_TOKEN,'[REDACTED]').replaceAll(env.FB_APP_SECRET || '__unused__','[REDACTED]').replace(/EAA[A-Za-z0-9]+/g,'[REDACTED]').slice(0,500)};
         return {ok:true,data};
       };
       const identity = await graph("me?fields=id,name");
       if (!identity.ok || String(identity.data.id) !== env.FB_PAGE_ID) return json({ok:false,stage:"page-token",identity},400);
       const write = req.method === "POST" ? await graph(`${env.FB_PAGE_ID}/subscribed_apps`, "POST") : null;
-      const read = await graph(`${env.FB_PAGE_ID}/subscribed_apps?fields=id,name,subscribed_fields`);
+      const read = await graph(`${env.FB_PAGE_ID}/subscribed_apps`);
       return json({ok:read.ok && (!write || write.ok),page:identity.data,write,subscription:read});
     }
     if (p === "/api/facebook/webhook-check" && req.method === "POST") {

@@ -11,7 +11,7 @@ const env = {
   ADMIN_KEY: crypto.randomUUID() + crypto.randomUUID(),
   LOCAL_DEMO: "true",
   AI_ENABLED: "false",
-  FB_PAGE_ID: "61595323019908",
+  FB_PAGE_ID: "1270406139500514",
   ASSETS: {
     async fetch(req) {
       let path = new URL(req.url).pathname;

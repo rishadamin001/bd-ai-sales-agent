@@ -48,7 +48,7 @@ Open https://developers.facebook.com/apps/ and choose your app.
 
 1. App settings → Basic: reset the exposed app secret yourself. Labels may vary with Meta's current dashboard.
 2. Open the Messenger use case/product setup; connect the intended test Page and generate a replacement Page token with the required Page messaging permissions. Explicitly revoke the old token/access where Meta provides that control; generating a new token does not by itself prove the old one is invalid.
-3. Check the configured Page ID is your intended Page. This project currently uses `61595323019908`.
+3. Check the configured Page ID is your intended Page. This project currently uses `1270406139500514`.
 4. Store the NEW values directly in Cloudflare through hidden prompts:
 
 ```powershell

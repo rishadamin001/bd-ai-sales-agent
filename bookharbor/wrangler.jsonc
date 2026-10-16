@@ -21,7 +21,7 @@
 		},
 	],
 	"vars": {
-		"FB_PAGE_ID": "61595323019908",
+		"FB_PAGE_ID": "1270406139500514",
 		"GRAPH_VERSION": "v24.0",
 		"AI_MODEL": "@cf/qwen/qwen3-30b-a3b-fp8",
 		"AI_ENABLED": "true",
