@@ -2,6 +2,15 @@
 
 A working academic bookshop demo for IUB Web Development & E-commerce. It includes a responsive catalogue, multilingual chat workflow, validated demo orders, private owner dashboard, and an official Facebook Messenger webhook. No payment or courier booking is performed.
 
+## Current deployment — 17 October 2026
+
+- Website: https://bookharbor-mis465.bookharbor-mis465.workers.dev
+- Messenger: https://m.me/1270406139500514 (Page for testing).
+- Real admin-profile messages and replies verified, including a Cloudflare AI response; 17 automated tests pass.
+- Meta accepted the Page subscription for messages and messaging_postbacks. Reading the subscription list still requires pages_manage_metadata permission.
+- Public-user access and token expiry have not been verified. For a classroom demo, use the tested admin profile or an accepted app Tester role.
+- See [MESSENGER-SETUP.md](MESSENGER-SETUP.md) and [VERIFICATION.md](VERIFICATION.md) for setup and evidence.
+
 ## Start on this computer
 
 Requires Node.js 22.13+ (Node 24 recommended). No packages are required for the local demo.
@@ -29,6 +38,7 @@ Tests cover totals, language lookup, number validation, stock, explicit confirma
 5. Send `CONFIRM`; open Orders and show the saved order reference and reduced stock.
 6. Try `Watch Me` (out of stock), an invalid phone, and `human` (pauses the conversation). Resume from Conversations.
 7. Once deployed and connected, repeat on Messenger using a permitted Meta test account. Show Facebook events in Conversations.
+7. Repeat on the connected testing Page using a permitted Meta test account. Show Facebook events in Conversations.
 8. To demonstrate genuine AI interpretation after deployment, ask `Do you have the adventure about Bilbo?`. Check the message engine label. If unavailable, report the fallback rather than claiming AI ran.
 
 ## Architecture in plain language
@@ -44,6 +54,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md). Stay on Cloudflare Workers Free; do not enab
 ## Data and operational limitations
 
 - Fictional test data only. Dashboard access uses an owner password with signed, HttpOnly sessions; share the password only with intended testers.
+- Fictional test data only. Dashboard access uses an owner password with signed, HttpOnly sessions. Messenger testers do not need this password; keep it private to the owner.
 - General unfamiliar enquiries may be sent to Cloudflare AI. Phone-like text is masked, but this is not a universal personal-data filter. Do not submit real private information.
 - The Page app secret and Page token belong only in Cloudflare secrets, never GitHub or browser JavaScript. Previously exposed credentials must be rotated.
 - Inbox replay is deduplicated; order state, order insert and inventory update share one database transaction. A global expiring lock serializes short demo workloads. This is suitable for a tiny course demo, not high-volume production.

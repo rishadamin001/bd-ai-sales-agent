@@ -6,3 +6,7 @@ node_modules/
 *.sqlite*
 work/
 *.log
+OWNER-ACCESS.txt
+**/OWNER-ACCESS.txt
+*.pem
+*.key

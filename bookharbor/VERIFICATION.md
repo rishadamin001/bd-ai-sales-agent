@@ -5,6 +5,11 @@ Date: 16 October 2026 (Asia/Dhaka).
 ## Verified locally
 
 - 15 automated tests passed using the same Worker handler and business logic with a SQLite adapter for the D1 interface.
+Updated: 17 October 2026 (Asia/Dhaka).
+
+## Verified locally
+
+- 17 automated tests passed using the same Worker handler and business logic with a SQLite adapter for the D1 interface, including postback deduplication.
 - Browser opened the catalogue, accepted a demo order, calculated 2 × ৳650 + ৳70 = ৳1,370, and saved the confirmed order in the dashboard.
 - Browser order reference observed: BH-49D44A07 (fictional local test).
 - Screenshot saved separately as `bookharbor-demo-order.png`.
@@ -24,5 +29,22 @@ Date: 16 October 2026 (Asia/Dhaka).
 - Broad real-model language-quality evaluation in Bangla/Banglish.
 - Rotated Meta credentials, permissions and webhook subscription.
 - Actual Messenger send/receive from the intended test account.
+## Verified Messenger integration
+
+- Correct Page: Page for testing, ID 1270406139500514.
+- Existing Worker bookharbor-mis465 redeployed on account bfd0afa1d5021b7538f589b10180d31a.
+- Saved Page token identity matched this Page. POST subscribed_apps for messages,messaging_postbacks returned success:true.
+- Live synthetic verification challenge succeeded; correctly signed POST returned 200 and invalid signature returned 403.
+- Real POST /webhook logged facebook_received and facebook_send_accepted. Two durable Facebook events had status sent and no error, using rules and cloudflare-ai respectively.
+- Owner confirmed the reply arrived when messaging from the personal admin profile.
+- ADMIN_KEY and FB_VERIFY_TOKEN were rotated; owner reported uploading replacement Meta credentials. No private values are included in this repository.
+
+## Remaining limits and unverified scenarios
+
+- Broad real-model language-quality evaluation in Bangla/Banglish.
+- GET subscribed_apps is denied with code 200: requires pages_manage_metadata permission. The successful POST and real conversation do not remove this read-back limitation.
+- Public users outside accepted app roles and the professor's own profile have not been tested.
+- New Page token expiry and revocation of every older token have not been independently verified.
+- Complete order capture was tested on the deployed website; the complete Messenger order flow still needs a presentation rehearsal.
 
 Passing local and mocked tests does not establish the unverified external connections above.
