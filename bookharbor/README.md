@@ -37,6 +37,7 @@ Tests cover totals, language lookup, number validation, stock, explicit confirma
 4. Check the summary: books ৳1,300 + delivery ৳70 = ৳1,370. No order exists until confirmation.
 5. Send `CONFIRM`; open Orders and show the saved order reference and reduced stock.
 6. Try `Watch Me` (out of stock), an invalid phone, and `human` (pauses the conversation). Resume from Conversations.
+7. Once deployed and connected, repeat on Messenger using a permitted Meta test account. Show Facebook events in Conversations.
 7. Repeat on the connected testing Page using a permitted Meta test account. Show Facebook events in Conversations.
 8. To demonstrate genuine AI interpretation after deployment, ask `Do you have the adventure about Bilbo?`. Check the message engine label. If unavailable, report the fallback rather than claiming AI ran.
 
@@ -52,6 +53,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md). Stay on Cloudflare Workers Free; do not enab
 
 ## Data and operational limitations
 
+- Fictional test data only. Dashboard access uses an owner password with signed, HttpOnly sessions; share the password only with intended testers.
 - Fictional test data only. Dashboard access uses an owner password with signed, HttpOnly sessions. Messenger testers do not need this password; keep it private to the owner.
 - General unfamiliar enquiries may be sent to Cloudflare AI. Phone-like text is masked, but this is not a universal personal-data filter. Do not submit real private information.
 - The Page app secret and Page token belong only in Cloudflare secrets, never GitHub or browser JavaScript. Previously exposed credentials must be rotated.

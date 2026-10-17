@@ -1,5 +1,10 @@
 # Verification record
 
+Date: 16 October 2026 (Asia/Dhaka).
+
+## Verified locally
+
+- 15 automated tests passed using the same Worker handler and business logic with a SQLite adapter for the D1 interface.
 Updated: 17 October 2026 (Asia/Dhaka).
 
 ## Verified locally
@@ -19,6 +24,11 @@ Updated: 17 October 2026 (Asia/Dhaka).
 - Signed owner login and webhook GET challenge passed against the deployed server.
 - Dashboard password and webhook verification token are server secrets; an ignored local owner-access file contains the owner's private copy.
 
+## Still requires account-connected verification
+
+- Broad real-model language-quality evaluation in Bangla/Banglish.
+- Rotated Meta credentials, permissions and webhook subscription.
+- Actual Messenger send/receive from the intended test account.
 ## Verified Messenger integration
 
 - Correct Page: Page for testing, ID 1270406139500514.
