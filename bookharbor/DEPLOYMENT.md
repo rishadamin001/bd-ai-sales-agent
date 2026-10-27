@@ -42,6 +42,43 @@ Enter a unique long demo password at the hidden prompt. It is the password you t
 
 Verify `/api/health`, sign into the site and repeat the sample checkout. The model is `@cf/qwen/qwen3-30b-a3b-fp8` through Cloudflare's AI binding; no separate OpenAI key is needed. If account-specific model terms require acceptance, review them in your account first. Do not select any paid model to resolve an error.
 
+## Add the MIS demo textbooks to an existing D1 database
+
+The four MIS textbooks are stored as new `products` rows. When the code is
+merged, the existing live database **does not seed itself**: it needs this
+specific one-time additive SQL migration. Do not delete or recreate D1, and
+do not reset the products table. Run from the `bookharbor` directory
+after you've reviewed the branch and connected Wrangler to the intended
+Cloudflare account:
+
+```powershell
+npx.cmd wrangler d1 execute bookharbor-mis465 --remote --file=migrations/2026-10-27-add-mis-books.sql
+```
+
+The migration uses `INSERT OR IGNORE`. It adds the four new product IDs only
+when absent, and leaves existing stock, prices, conversations, and order
+records unchanged. It is safe to rerun after an interrupted session, but
+does not refresh previously seeded demo stock.
+
+Verify the resulting catalogue without touching any order records:
+
+```powershell
+npx.cmd wrangler d1 execute bookharbor-mis465 --remote --command="SELECT id,title,category,price,stock FROM products WHERE category='Management Information Systems' ORDER BY id"
+```
+
+All prices and stock counts are **fictional academic demo values**, not
+verified retail inventory. Finally, deploy the tested code from the merged
+branch:
+
+```powershell
+npx.cmd wrangler deploy
+```
+
+After migration **and** deployment, check the **MIS textbooks** category
+filter on the site, and verify that `MIS books` and `Order M: Information
+Systems` work through an authorized test Messenger account. Do not run the
+migration or deployment against a different Cloudflare account or database.
+
 ## 3. Replace the exposed Facebook credentials
 
 Open https://developers.facebook.com/apps/ and choose your app.
