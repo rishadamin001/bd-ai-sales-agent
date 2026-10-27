@@ -6,10 +6,10 @@ A working academic bookshop demo for IUB Web Development & E-commerce. It includ
 
 - Website: https://bookharbor-mis465.bookharbor-mis465.workers.dev
 - Messenger: https://m.me/1270406139500514 (Page for testing).
-- Real admin-profile messages and replies verified, including a Cloudflare AI response; 17 automated tests pass.
+- Authorized-profile Messenger messages and replies were verified on 17 October 2026, including one Cloudflare AI response. The test suite has since grown: after PR #6, 88 tests passed on GitHub Actions. This is historical evidence, not verification that the latest version is deployed.
 - Meta accepted the Page subscription for messages and messaging_postbacks. Reading the subscription list still requires pages_manage_metadata permission.
 - Public-user access and token expiry have not been verified. For a classroom demo, use the tested admin profile or an accepted app Tester role.
-- See [MESSENGER-SETUP.md](MESSENGER-SETUP.md) and [VERIFICATION.md](VERIFICATION.md) for setup and evidence.
+- See [MESSENGER-SETUP.md](MESSENGER-SETUP.md), [VERIFICATION.md](VERIFICATION.md), [PROJECT_STATUS.md](PROJECT_STATUS.md), and [DEPLOYMENT.md](DEPLOYMENT.md) for evidence, current blockers and controlled GitHub-to-Cloudflare deployment.
 
 ## Start on this computer
 
