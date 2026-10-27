@@ -105,10 +105,15 @@ test("short follow-ups reuse the selected book, unknown titles never order it", 
     assert.match(r.reply, /650/);
     assert.equal(r.engine, "rules");
   }
-  for (const text of ["order Dune", "Dune kinbo", "Dune কিনব"]) {
+  for (const [text, pattern] of [
+    ["order Dune", /not listed/],
+    ["Dune kinbo", /catalogue-e nei/],
+    ["Dune কিনব", /তালিকায় নেই/],
+  ]) {
     const r = await transition(previous, text, products, noAI);
     assert.equal(r.state.step, "browse");
-    assert.match(r.reply, /Which book/);
+    assert.equal(r.state.product, undefined);
+    assert.match(r.reply, pattern);
   }
   for (const text of ["buy it please", "eta nibo", "এটা নেবো"]) {
     assert.equal((await transition(previous, text, products, noAI)).state.step, "quantity");
