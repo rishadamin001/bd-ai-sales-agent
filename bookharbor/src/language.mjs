@@ -106,6 +106,9 @@ export function requestedUnlistedTitle(text) {
   if (!title) return null;
   title = title.replace(/^(?:a copy of|the book called|the book named|the book|book called|book named) /, "").trim();
   const common = /^(?:it|this|that|this book|the book|a book|any book|any books|more books|books|book|anything|something|everything|one|two|help|hello|thanks|thank you|price|delivery|payment|a recommendation|recommendations)$/;
+  // Descriptions are not book titles. Pass them to the constrained AI classifier.
+  if (/^(?:the |an? )?(?:adventure|story|novel|book|fantasy|mystery|romance) (?:about|with|like|by)\b/.test(title) ||
+      /\b(?:something about|a book about|books like|similar to|recommend|suggest)\b/.test(title)) return null;
   if (!title || title.length > 85 || title.split(" ").length > 9 || common.test(title)) return null;
   return title;
 }
