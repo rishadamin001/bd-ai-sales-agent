@@ -92,6 +92,10 @@ test("policy, specific titles, out-of-stock and exact confirmation behavior surv
   assert.match(delivery.reply, /Dhaka city ৳70/);
   const title = await transition(null, "How much is The Hobbit?", products, noAI);
   assert.match(title.reply, /Price: ৳650/);
+  const singleTitle = await transition(null, "Is Hobbit a fantasy book?", products, noAI);
+  assert.equal(singleTitle.state.product, "hobbit");
+  assert.match(singleTitle.reply, /Price: ৳650/);
+  assert.doesNotMatch(singleTitle.reply, /Here are currently available fantasy books/);
   const unavailable = await transition(null, "Watch Me", products, noAI);
   assert.match(unavailable.reply, /out of stock/);
   const stale = await transition(null, "order Dune", products, noAI);
