@@ -261,7 +261,8 @@ export async function transition(previous, text, products, ai) {
   // A specifically named but unlisted title must not fall back to the
   // previously selected book or be incorrectly assigned a price by AI.
   // Descriptive questions (e.g. "adventure about Bilbo") still reach the AI.
-  const unlisted = !found.length && !policy ? requestedUnlistedTitle(text) : null;
+  const unlisted = !found.length && !policy && intent !== "catalog" && intent !== "greeting"
+    ? requestedUnlistedTitle(text) : null;
   if (unlisted) {
     delete s.product;
     const title = unlisted.replace(/\b[a-z]/g, (char) => char.toUpperCase());
