@@ -6,6 +6,59 @@ The database and deployment are already provisioned in the owner's account. The 
 
 To securely save rotated Meta secrets on this computer, run `scripts/configure-facebook.ps1` in PowerShell. Actual Messenger delivery still requires the Meta webhook setup below.
 
+## Option A: controlled deployment from GitHub (recommended)
+
+The repository now includes a **manual-only GitHub Actions** workflow called
+`BookHarbor controlled Cloudflare deploy`. It does **not** run automatically
+when a pull request is merged. A successful GitHub code test is not proof
+that Cloudflare was updated.
+
+**One-time setup (performed in your own accounts, never in ChatGPT):**
+
+1. In [Cloudflare dashboard](https://dash.cloudflare.com/), create a narrowly
+   scoped account API token with enough permission to deploy your **existing**
+   Worker (**Workers: Editor** for that Worker) and execute your existing
+   database migration (**D1: Edit**, scoped as narrowly as available).
+   See [Cloudflare's current GitHub Actions guide](https://developers.cloudflare.com/workers/ci-cd/external-cicd/github-actions/)
+   and [access scopes](https://developers.cloudflare.com/workers/authorization/workers/).
+   Do not share or commit the token.
+2. Open the GitHub repository → **Settings** → **Secrets and variables** →
+   **Actions** → **New repository secret**. Save these **two** secret names:
+   - `CLOUDFLARE_API_TOKEN`: the Cloudflare token from step 1
+   - `CLOUDFLARE_ACCOUNT_ID`: the ID of the **existing** BookHarbor account;
+     it must exactly match `account_id` in `wrangler.jsonc`
+3. In GitHub, open **Actions** → **BookHarbor controlled Cloudflare deploy** →
+   **Run workflow**. Select branch `main`, enter exactly
+   `bookharbor-mis465` in both the **Worker name** and **Database name** inputs,
+   and keep **Insert missing MIS demo titles** selected for your first run.
+4. Follow the job logs. The workflow installs dependencies, runs all tests,
+   confirms your Cloudflare account and existing D1 database ID, executes
+   the four-row `INSERT OR IGNORE` MIS migration, verifies all four new
+   records, deploys the Worker, and checks the public health/catalogue
+   endpoints without generating any order.
+
+The workflow **does not create or delete databases**, send customer messages,
+reset stock, touch owner login secrets or collect payment. If identity checks
+fail it stops before D1 changes. If migration succeeds but the deploy fails,
+running the same workflow again safely skips existing MIS rows; it does not
+overwrite current stock. To avoid introducing new permission problems, keep
+the token scoped to the existing resources rather than all Cloudflare accounts.
+
+**Important:** This workflow cannot run until both secrets are actually
+configured in GitHub. Merely merging the workflow file has no effect on
+Cloudflare. The connection available to a ChatGPT conversation and a
+Cloudflare connector available in Codex can differ. Do not assume a plugin
+was used for deployment unless the Cloudflare account or GitHub workflow
+reports an accepted release. Full Messenger/public-account testing remains
+a separate Meta approval and role-access milestone.
+
+### Local Wrangler alternative
+
+The original authenticated Wrangler instructions below are still valid if
+you prefer not to store a deployment API token in GitHub. Never run the
+full `schema.sql` as a routine production migration once the database has
+real orders; use the additive MIS migration instead.
+
 ## 1. Cloudflare login
 
 Use the Free plan. No custom domain or payment card is required by this project. Do not upgrade when a quota is exhausted.
