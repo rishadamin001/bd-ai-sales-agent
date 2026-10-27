@@ -40,6 +40,27 @@ requires an existing summary and one of the original exact confirmation commands
 conversational normalization never authorizes an order. These tests run entirely
 locally with in-memory databases and no live AI or Messenger requests.
 
+## Customer-language and unavailable-title responses
+
+The assistant responds in English to clearly English enquiries, even after a
+Bangla or Banglish exchange. Bengali-script messages receive Bengali replies,
+and conversational Banglish messages receive Banglish replies. Bare title
+selections, quantities, colours and exact confirmation commands preserve the
+previous conversation language. Greetings, payment and returns guidance, and
+catalogue prompts have language-appropriate copy.
+
+For a specifically named book absent from the D1 catalogue (for example,
+`Do you have Atomic Habits?` or `Dune kinbo`), the assistant explains that the
+title is not listed and offers BOOKS or HUMAN. It does **not** claim to know a
+missing book's price or stock, invent inventory, or reuse a previously selected
+title for an unlisted request. Descriptive book enquiries may still be
+classified by the constrained Workers AI classifier. A real book request,
+order, payment or availability cannot be fulfilled for unlisted inventory.
+
+Use `npm test` inside `bookharbor/` to run the existing regression suite
+plus `tests/customer-communication.test.mjs`. This does not contact Meta or
+Cloudflare. No automatic deployment is configured in CI.
+
 ## Present to your professor
 
 1. Open Bookshop. Explain that all prices and inventory are fictional, inspired by book titles in the reference screenshots. The shop is not affiliated with Book Ocean BD.
