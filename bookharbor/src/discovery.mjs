@@ -67,7 +67,7 @@ export function discoverBooks(text, products) {
   // Ignore sentences that merely mention a genre without asking about books.
   if (genre && !author && !budget && !recommend && !cheap &&
       !hasPhrase(t, ["book", "books", "boi", "বই", "বইগুলো", "available",
-        "have", "show", "list", "read", "genre", "title", "titles"]) &&
+        "have", "show", "list", "read", "title", "titles"]) &&
       t !== genre && !GENRES.some((g) => g.labels.some((label) => t === enquiryText(label)))) {
     return null;
   }
