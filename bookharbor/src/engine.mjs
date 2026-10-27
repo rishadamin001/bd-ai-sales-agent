@@ -1,6 +1,8 @@
-export const bnDigits = (text) =>
-  String(text).replace(/[০-৯]/g, (c) => "০১২৩৪৫৬৭৮৯".indexOf(c));
-export const normalize = (text) => bnDigits(text).toLowerCase().trim();
+import {
+  bnDigits, normalize, enquiryText, matchingProducts, wantsOrder,
+  contextualOrder, enquiryIntent, negativeRequest, quantity,
+} from "./language.mjs";
+export { bnDigits, normalize } from "./language.mjs";
 export function phone(text) {
   const p = bnDigits(text)
     .replace(/[\s()+-]/g, "")
@@ -51,7 +53,7 @@ export function quote(product, qty, z) {
 function lang(t, prev) {
   if (/[\u0980-\u09ff]/.test(t)) return "bn";
   if (
-    /\b(koto|ache|ase|bhai|bhaiya|chai|lagbe|diben|korbo|amar|boi|den|korte|nibo|kinbo|kivabe|dorkar)\b/i.test(
+    /\b(koto|ache|ase|bhai|bhaiya|chai|lagbe|diben|korbo|amar|boi|den|korte|nibo|nebo|kinbo|kivabe|dorkar|dam|daam|dui|nil|lal|ferot)\b/i.test(
       t,
     )
   )
@@ -82,7 +84,8 @@ export async function transition(previous, text, products, ai) {
   }
   if (
     /^(human|agent|owner|staff|মানুষ|মালিক)$/.test(t) ||
-    /talk to (a )?(human|person)|complaint|অভিযোগ/.test(t)
+    /talk to (a )?(human|person)|complaint|অভিযোগ/.test(t) ||
+    /^(?:মানুষের সাথে কথা বলতে চাই|মালিকের সাথে কথা বলতে চাই|owner er sathe kotha bolbo|human please)$/.test(enquiryText(t))
   ) {
     s.handoff = true;
     return say(
@@ -98,7 +101,7 @@ export async function transition(previous, text, products, ai) {
       ),
       silent: true,
     };
-  if (/^(cancel|বাতিল)$/.test(t)) {
+  if (/^(cancel|বাতিল|cancel order|cancel korun|অর্ডার বাতিল|বাতিল করুন)$/.test(t)) {
     s.step = "browse";
     delete s.pending;
     return say(
@@ -106,8 +109,7 @@ export async function transition(previous, text, products, ai) {
     );
   }
   if (s.step === "quantity") {
-    const match = t.match(/^(\d{1,2})(?:\s*(?:copies|copy|ta|টা|টি|pcs))?$/);
-    const q = match ? Number(match[1]) : 0;
+    const q = quantity(t);
     const p = products.find((x) => x.id === s.product);
     if (!q || q > 10)
       return say(
@@ -126,11 +128,11 @@ export async function transition(previous, text, products, ai) {
     );
   }
   if (s.step === "wrap") {
-    const wrap = /^(blue|নীল|nil)$/.test(t)
+    const wrap = /^(blue|নীল|nil|neel)$/.test(t)
       ? "blue"
       : /^(red|লাল|lal)$/.test(t)
         ? "red"
-        : /^(none|no|না|no wrap)$/.test(t)
+        : /^(none|no|না|no wrap|lagbe na|র‍্যাপ লাগবে না)$/.test(t)
           ? "none"
           : null;
     if (!wrap) return say("Please choose blue, red, or none.");
@@ -250,20 +252,22 @@ export async function transition(previous, text, products, ai) {
       `ডেমো অর্ডার\n${p.title} × ${s.quantity}\nর‍্যাপ: ${s.wrap}\nবই ৳${q.subtotal} + ডেলিভারি ৳${q.delivery}\nমোট ৳${q.total} (ডেমো COD; অতিরিক্ত ফি নেই)\n${s.name} · ${s.phone}\n${s.address}\nCONFIRM, EDIT ADDRESS অথবা CANCEL লিখুন।`,
     );
   }
-  let found = products.filter((p) =>
-    p.aliases
-      .split(",")
-      .some((a) =>
-        a.length <= 4
-          ? new RegExp(`(^|\\s)${a}($|\\s|[?!])`, "i").test(t)
-          : t.includes(a),
-      ),
-  );
+  let found = matchingProducts(text, products);
   if (found.length > 1)
     return say("Which book do you mean? Please send one title at a time.");
-  let intent = null;
+  let intent = enquiryIntent(text);
+  const policy = ["delivery", "returns", "payment"].includes(intent);
+  // A policy question mentioning a title must not start checkout.
+  if (policy) found = [];
+  // Only short, unambiguous follow-ups reuse the last explicitly selected title.
+  if (!found.length && s.product && /^(?:price|price koto|dam koto|daam koto|দাম কত|দাম|stock|stock ache|স্টক আছে|is it available|how much is it)$/.test(enquiryText(t))) {
+    found = products.filter((p) => p.id === s.product);
+  }
   if (
     !found.length &&
+    (!intent || intent === "product") &&
+    !wantsOrder(t) &&
+    !negativeRequest(t) &&
     ai &&
     !/^(books|catalog|list|hi|hello|hey|help|order|buy|delivery|return|payment|stock)$/.test(
       t,
@@ -303,7 +307,7 @@ export async function transition(previous, text, products, ai) {
         `${p.title} stock e nei. Onno boi dekhte books likhun.`,
         `${p.title} এখন স্টকে নেই। অন্য বই দেখতে books লিখুন।`,
       );
-    if (/order|buy|nibo|kinbo|chai|অর্ডার|কিনব|চাই/.test(t)) {
+    if (wantsOrder(t)) {
       s.step = "quantity";
       return say(
         `${p.title} — ৳${p.price}. How many copies?`,
@@ -317,35 +321,32 @@ export async function transition(previous, text, products, ai) {
       `${p.title}\n${p.edition} · দাম ৳${p.price} · স্টক ${p.stock} কপি\nকিনতে ORDER লিখুন।`,
     );
   }
-  if (/\b(order|buy|nibo|kinbo)\b|অর্ডার|কিনব/.test(t) || intent === "order") {
-    if (!s.product)
+  if (!policy && (wantsOrder(t) || intent === "order")) {
+    if (!s.product || !contextualOrder(t))
       return say(
         "Which book would you like? Type its title or books for the catalogue.",
       );
     const p = products.find((p) => p.id === s.product);
-    if (!p.stock)
+    if (!p || !p.stock)
       return say("That book is out of stock. Type books for alternatives.");
     s.step = "quantity";
     return say("How many copies?", "Koy copy niben?", "কত কপি নেবেন?");
   }
-  if (
-    /delivery|charge|shipping|ডেলিভারি|চার্জ/.test(t) ||
-    intent === "delivery"
-  )
+  if (intent === "delivery")
     return say(
       "Demo delivery: Dhaka city ৳70 · suburbs ৳100 · outside Dhaka ৳130 per order. No extra COD charge. Illustrative shop policy, not a courier quote. No actual dispatch.",
       "Demo delivery: Dhaka city ৳70, suburbs ৳100, outside Dhaka ৳130. Extra COD charge nei. Real delivery hobe na.",
       "ডেমো ডেলিভারি: ঢাকা শহর ৳70, আশপাশ ৳100, ঢাকার বাইরে ৳130। অতিরিক্ত COD ফি নেই। এটি নমুনা নীতি; বাস্তব ডেলিভারি হবে না।",
     );
-  if (/return|exchange|refund|ফেরত|বদল/.test(t) || intent === "returns")
+  if (intent === "returns")
     return say(
       "Demo policy: report a damaged or incorrect book within 48 hours of delivery. Staff review is required. Type HUMAN for help. This demo does not issue refunds.",
     );
-  if (/payment|bkash|nagad|cod|পেমেন্ট|বিকাশ/.test(t) || intent === "payment")
+  if (intent === "payment")
     return say(
       "Demo cash on delivery only. Do not send money, PINs, OTPs, or payment screenshots. No payment is collected.",
     );
-  if (/books|catalog|list|boi|বই|বুক/.test(t) || intent === "catalog")
+  if (intent === "catalog")
     return say(
       "DEMO CATALOGUE\n" +
         products

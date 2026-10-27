@@ -29,6 +29,17 @@ npm.cmd test
 
 Tests cover totals, language lookup, number validation, stock, explicit confirmation, edited quotes, duplicate events, transaction rollback, handover, signature verification, protected routes, AI failure and the durable inbox. AI tests use mocks; passing them does not prove live AI quality or Meta permissions.
 
+Conversation regression tests also cover Bangla title suffixes (`হবিটটার দাম কত?`),
+punctuation and Unicode variants, Banglish follow-ups (`dam koto?`, `eta nibo`),
+and quantities written as words (`দুই কপি`, `dui copy`, `two copies`). Short price
+and stock follow-ups refer to the last selected title. Unknown titles and multiple
+titles require clarification; matching is intentionally not fuzzy. Delivery,
+payment and return enquiries use fixed shop policies, including when a title is
+mentioned. Negated purchase requests do not start checkout. Confirmation still
+requires an existing summary and one of the original exact confirmation commands;
+conversational normalization never authorizes an order. These tests run entirely
+locally with in-memory databases and no live AI or Messenger requests.
+
 ## Present to your professor
 
 1. Open Bookshop. Explain that all prices and inventory are fictional, inspired by book titles in the reference screenshots. The shop is not affiliated with Book Ocean BD.
