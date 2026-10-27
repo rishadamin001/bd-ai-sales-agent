@@ -1,6 +1,7 @@
 import {
   bnDigits, normalize, enquiryText, matchingProducts, wantsOrder,
   contextualOrder, enquiryIntent, negativeRequest, quantity,
+  messageLanguage, requestedUnlistedTitle, appreciation,
 } from "./language.mjs";
 export { bnDigits, normalize } from "./language.mjs";
 export function phone(text) {
@@ -50,22 +51,13 @@ export function quote(product, qty, z) {
     total: product.price * qty + delivery,
   };
 }
-function lang(t, prev) {
-  if (/[\u0980-\u09ff]/.test(t)) return "bn";
-  if (
-    /\b(koto|ache|ase|bhai|bhaiya|chai|lagbe|diben|korbo|amar|boi|den|korte|nibo|nebo|kinbo|kivabe|dorkar|dam|daam|dui|nil|lal|ferot)\b/i.test(
-      t,
-    )
-  )
-    return "bl";
-  return prev || "en";
-}
 const select = (l, en, bl, bn) => (l === "bn" ? bn : l === "bl" ? bl : en);
-const help =
-  "Try: books · Hobbit price koto? · delivery · order · human · reset";
+const help = "Try BOOKS, DELIVERY, or HUMAN for help.";
+const helpBanglish = "BOOKS, DELIVERY, ba HUMAN likhte paren.";
+const helpBangla = "বইয়ের তালিকার জন্য BOOKS, ডেলিভারির জন্য DELIVERY, বা সহায়তার জন্য HUMAN লিখুন.";
 export async function transition(previous, text, products, ai) {
   const s = structuredClone(previous || { step: "browse" });
-  s.language = lang(text, s.language);
+  s.language = messageLanguage(text, s.language);
   const l = s.language,
     t = normalize(text);
   let engine = "rules";
@@ -77,8 +69,10 @@ export async function transition(previous, text, products, ai) {
   if (t === "reset" || t === "restart" || t === "নতুন") {
     return {
       state: { step: "browse", language: l },
-      reply:
-        "New demo conversation started. Type books to browse. Use fictional details only.",
+      reply: select(l,
+        "Your conversation has been restarted. Type BOOKS to browse our demo catalogue. Please use fictional details.",
+        "Conversation abar shuru hoyeche. Demo catalogue dekhte BOOKS likhun. Shudhu demo details din.",
+        "কথোপকথন নতুন করে শুরু হয়েছে। নমুনা বইয়ের তালিকা দেখতে BOOKS লিখুন। শুধু কাল্পনিক তথ্য দিন।"),
       engine,
     };
   }
@@ -252,6 +246,11 @@ export async function transition(previous, text, products, ai) {
       `ডেমো অর্ডার\n${p.title} × ${s.quantity}\nর‍্যাপ: ${s.wrap}\nবই ৳${q.subtotal} + ডেলিভারি ৳${q.delivery}\nমোট ৳${q.total} (ডেমো COD; অতিরিক্ত ফি নেই)\n${s.name} · ${s.phone}\n${s.address}\nCONFIRM, EDIT ADDRESS অথবা CANCEL লিখুন।`,
     );
   }
+  if (appreciation(text)) return say(
+    "You're welcome! If you need book recommendations or further assistance, please let me know.",
+    "Apnake shagotom! Boi niye aro proshno thakle janaben.",
+    "আপনাকে স্বাগতম! বই সম্পর্কে আরও কিছু জানতে চাইলে জানাবেন।",
+  );
   let found = matchingProducts(text, products);
   if (found.length > 1)
     return say("Which book do you mean? Please send one title at a time.");
@@ -259,6 +258,19 @@ export async function transition(previous, text, products, ai) {
   const policy = ["delivery", "returns", "payment"].includes(intent);
   // A policy question mentioning a title must not start checkout.
   if (policy) found = [];
+  // A specifically named but unlisted title must not fall back to the
+  // previously selected book or be incorrectly assigned a price by AI.
+  // Descriptive questions (e.g. "adventure about Bilbo") still reach the AI.
+  const unlisted = !found.length && !policy ? requestedUnlistedTitle(text) : null;
+  if (unlisted) {
+    delete s.product;
+    const title = unlisted.replace(/\b[a-z]/g, (char) => char.toUpperCase());
+    return say(
+      "Thank you for asking about " + title + ". This title is not listed in our current demo catalogue, so I can't confirm its price or availability. Type BOOKS to see available titles, or HUMAN to request help from the owner.",
+      title + " amader current demo catalogue-e nei. Tai dam ba availability confirm korte parchi na. Available boi dekhte BOOKS, owner er help pete HUMAN likhun.",
+      title + " আমাদের বর্তমান নমুনা বইয়ের তালিকায় নেই। তাই দাম বা প্রাপ্যতা নিশ্চিত করতে পারছি না। বইয়ের তালিকা দেখতে BOOKS অথবা মালিকের সহায়তার জন্য HUMAN লিখুন।",
+    );
+  }
   // Only short, unambiguous follow-ups reuse the last explicitly selected title.
   if (!found.length && s.product && /^(?:price|price koto|dam koto|daam koto|দাম কত|দাম|stock|stock ache|স্টক আছে|is it available|how much is it)$/.test(enquiryText(t))) {
     found = products.filter((p) => p.id === s.product);
@@ -340,38 +352,38 @@ export async function transition(previous, text, products, ai) {
     );
   if (intent === "returns")
     return say(
-      "Demo policy: report a damaged or incorrect book within 48 hours of delivery. Staff review is required. Type HUMAN for help. This demo does not issue refunds.",
+      "For this demo, damaged or incorrect books should be reported within 48 hours of delivery. Please send HUMAN for staff assistance. No real refunds are issued.",
+      "Demo-te damaged ba wrong boi pele delivery-r 48 hours-er moddhe janaben. Staff-er help pete HUMAN likhun. Real refund deya hoy na.",
+      "এই ডেমোতে ক্ষতিগ্রস্ত বা ভুল বই পেলে ডেলিভারির 48 hours-এর মধ্যে জানান। সহায়তার জন্য HUMAN লিখুন। বাস্তবে কোনো অর্থ ফেরত দেওয়া হয় না।",
     );
   if (intent === "payment")
     return say(
-      "Demo cash on delivery only. Do not send money, PINs, OTPs, or payment screenshots. No payment is collected.",
+      "Our demo uses cash on delivery only. No payment is collected. Please do not share money, PINs, OTPs, or payment screenshots.",
+      "Demo-te shudhu cash on delivery dekhano hoy. Kono payment neya hoy na. PIN, OTP, ba payment screenshot pathaben na.",
+      "এই ডেমোতে শুধু ক্যাশ অন ডেলিভারি দেখানো হয়। কোনো অর্থ নেওয়া হয় না। PIN, OTP বা পেমেন্টের স্ক্রিনশট পাঠাবেন না।",
     );
-  if (intent === "catalog")
+  if (intent === "catalog") {
+    const items = products.map((p) =>
+      `${p.title} — ৳${p.price} · ${p.stock ? `${p.stock} available` : "out of stock"}`,
+    ).join("\n");
     return say(
-      "DEMO CATALOGUE\n" +
-        products
-          .map(
-            (p) =>
-              `${p.title} — ৳${p.price} · ${p.stock ? `${p.stock} available` : "out of stock"}`,
-          )
-          .join("\n") +
-        "\nSend a title for details.",
+      "DEMO CATALOGUE\n" + items + "\nPlease send a book title for more details.",
+      "DEMO CATALOGUE\n" + items + "\nDetails jante boier naam likhun.",
+      "DEMO CATALOGUE\n" + items + "\nবিস্তারিত জানতে বইয়ের নাম লিখুন।",
     );
+  }
   if (
     /^(hi|hello|hey|salam|assalamu alaikum|হ্যালো|সালাম)[!. ]*$/.test(t) ||
     intent === "greeting"
   )
     return say(
-      "Hello! I’m BookHarbor’s automated book assistant, an IUB MIS 465 demo. Please use fictional details only. " +
-        help,
-      "Assalamu alaikum! Ami BookHarbor er automated book assistant — IUB MIS 465 demo. Shudhu fictional details din. " +
-        help,
-      "স্বাগতম! আমি BookHarbor-এর স্বয়ংক্রিয় বই সহকারী — IUB MIS 465 ডেমো। শুধু কাল্পনিক তথ্য ব্যবহার করুন। " +
-        help,
+      "Hello! Welcome to BookHarbor. I'm the automated assistant for our academic bookshop demo. I can help with book availability, prices, and demo orders. " + help,
+      "Assalamu alaikum! BookHarbor-e shagotom. Ami amader demo bookshop-er automated assistant. Boi, dam, stock, ebong demo order niye help korte pari. " + helpBanglish,
+      "স্বাগতম! আমি BookHarbor-এর স্বয়ংক্রিয় সহকারী। বইয়ের দাম, মজুত ও নমুনা অর্ডার সম্পর্কে সাহায্য করতে পারি। " + helpBangla,
     );
   return say(
-    "I’m not sure which book or request you mean. " + help,
-    "Bujhte parini — boier naam ba books likhun. " + help,
-    "বুঝতে পারিনি—বইয়ের নাম অথবা books লিখুন। " + help,
+    "I'm not sure which book or request you mean. Please share a specific title, or choose BOOKS to browse our current catalogue. " + help,
+    "Apnar proshno ta puro bujhte parini. Doya kore boier naam likhun, ba BOOKS diye available catalogue dekhun. " + helpBanglish,
+    "আপনার প্রশ্নটি পুরোপুরি বুঝতে পারিনি। অনুগ্রহ করে বইয়ের নাম লিখুন অথবা BOOKS লিখে বর্তমান বইয়ের তালিকা দেখুন। " + helpBangla,
   );
 }
