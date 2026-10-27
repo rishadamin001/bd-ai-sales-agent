@@ -115,6 +115,27 @@ Publisher references (for textbook titles and authors, not sample prices):
 - Pearson: https://www.pearson.com/en-us/subject-catalog/p/information-systems-today%3A-managing-the-digital-world/P200000001974/9780136524656
 - McGraw Hill: https://www.mheducation.com.sg/m-information-systems-9781264934669-asia-group
 
+## Editing an unconfirmed demo order
+
+After seeing the final demo order summary, a customer can now send
+`EDIT QUANTITY`, `EDIT WRAP`, or `EDIT ADDRESS` before confirming.
+`EDIT QUANTITY` asks for a new whole-number copy count from 1 to 10 and
+checks the current D1 stock. `EDIT WRAP` asks for `BLUE`, `RED`, or
+`NONE`; all wrapping remains free. `EDIT ADDRESS` recalculates delivery
+zones and charges. The checkout remembers the other fictional details and
+then shows a **new total requiring a fresh exact `CONFIRM`**.
+
+Editing never creates an order or deducts stock. Pressing `CONFIRM` while
+answering an edit prompt cannot place an order. `CANCEL` clears the unfinished
+order details and the selected title, so the next ambiguous "buy it" cannot
+reopen that discarded draft. Existing order history is not deleted by
+cancelling a draft. The order confirmation vocabulary and all total/stock
+validation rules are unchanged.
+
+The new checks in `tests/checkout-edits.test.mjs` exercise this behavior
+on the actual in-memory D1-compatible checkout path, including MIS books
+and Bengali responses. Run `npm test` under `bookharbor/` to verify.
+
 ## Present to your professor
 
 1. Open Bookshop. Explain that all prices and inventory are fictional, inspired by book titles in the reference screenshots. The shop is not affiliated with Book Ocean BD.
