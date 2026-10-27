@@ -171,7 +171,7 @@ test("safe checkout edits persist through actual database event handling", async
     assert.match(r.reply, /3050/); // 2*1490 + 70
     for (const t of ["EDIT QUANTITY", "3", "EDIT WRAP", "none"]) {
       r = await send(t);
-      assert.equal(r.orderId, null);
+      assert.equal(r.orderId, undefined);
       assert.equal((await all(e.DB,"SELECT * FROM orders")).length, 0);
     }
     assert.match(r.reply, /4540/); // 3*1490 + 70
