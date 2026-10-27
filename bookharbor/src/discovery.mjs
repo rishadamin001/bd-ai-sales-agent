@@ -51,6 +51,13 @@ export function discoverBooks(text, products) {
     "good book", "good books", "ভালো বই", "বই সাজেস্ট", "সুপারিশ", "পরামর্শ",
     "sajest", "sajest koro", "suggest koro", "recommend koro",
   ]);
+  // If someone asks for a quality or theme absent from catalogue metadata
+  // ("suggest something mysterious"), do not pretend generic cheap books fit.
+  // Keep the existing constrained AI/fallback path for such open-ended requests.
+  const thematicRequest = recommend && !genre && !author && !budget && !cheap &&
+    /(?:suggest|recommend)(?: me)? (?:something|anything|a book|books?)(?: [a-z]+){1,}/.test(t);
+  if (thematicRequest) return null;
+
   // An explicit title should normally take precedence. These tokens indicate
   // the customer is asking for browsing/filtering, not a single title's price.
   const browse = genre || author || budget || cheap || recommend;
@@ -112,5 +119,5 @@ export function discoveryReply(discovery, language) {
     return `আমাদের ডেমো তালিকা থেকে মজুত থাকা ${criteria} (দাম অনুযায়ী):\n${items}${more}\nডেলিভারি চার্জ আলাদা। বিস্তারিত জানতে একটি বইয়ের নাম লিখুন।`;
   if (language === "bl")
     return `Amader demo catalogue-er available ${criteria} (kom dam age):\n${items}${more}\nDelivery charge alada. Details jante boier naam likhun.`;
-  return `Here are currently available ${criteria} from our demo catalogue (lowest price first):\n${items}${more}\nDelivery is charged separately. Send an exact title for details; these are catalogue options, not bestseller rankings.`;
+  return `Here are currently available ${criteria} from our demo catalogue (lowest price first):\n${items}${more}\nDelivery is charged separately. Send an exact title for details; these are catalogue options, not popularity rankings.`;
 }
