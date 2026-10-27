@@ -5,6 +5,15 @@ import { enquiryText, hasPhrase } from "./language.mjs";
  * prices, stock, or any order authorization decision.
  */
 const GENRES = [
+  // MIS is an academic category, not a generic title alias: one request
+  // should list all matching books instead of arbitrarily selecting one.
+  { id: "management information systems", labels: [
+    "mis", "mis books", "mis textbooks", "management information systems",
+    "management information system", "information systems",
+    "information systems books", "information systems textbooks",
+    "management information systems books", "ম্যানেজমেন্ট ইনফরমেশন সিস্টেমস",
+    "ম্যানেজমেন্ট ইনফরমেশন সিস্টেম", "এমআইএস", "এম আই এস", "mis boi",
+  ] },
   { id: "fantasy", labels: ["fantasy", "ফ্যান্টাসি"] },
   { id: "fiction", labels: ["fiction", "ফিকশন"] },
   { id: "manga", labels: ["manga", "মাঙ্গা"] },
@@ -73,7 +82,7 @@ export function discoverBooks(text, products) {
 
   // Ignore sentences that merely mention a genre without asking about books.
   if (genre && !author && !budget && !recommend && !cheap &&
-      !hasPhrase(t, ["book", "books", "boi", "বই", "বইগুলো", "available",
+      !hasPhrase(t, ["book", "books", "textbook", "textbooks", "boi", "বই", "বইগুলো", "available",
         "have", "show", "list", "read", "title", "titles"]) &&
       t !== genre && !GENRES.some((g) => g.labels.some((label) => t === enquiryText(label)))) {
     return null;
