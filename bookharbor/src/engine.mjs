@@ -3,6 +3,7 @@ import {
   contextualOrder, enquiryIntent, negativeRequest, quantity,
   messageLanguage, requestedUnlistedTitle, appreciation,
 } from "./language.mjs";
+import { discoverBooks, discoveryReply } from "./discovery.mjs";
 export { bnDigits, normalize } from "./language.mjs";
 export function phone(text) {
   const p = bnDigits(text)
@@ -246,11 +247,25 @@ export async function transition(previous, text, products, ai) {
       `ডেমো অর্ডার\n${p.title} × ${s.quantity}\nর‍্যাপ: ${s.wrap}\nবই ৳${q.subtotal} + ডেলিভারি ৳${q.delivery}\nমোট ৳${q.total} (ডেমো COD; অতিরিক্ত ফি নেই)\n${s.name} · ${s.phone}\n${s.address}\nCONFIRM, EDIT ADDRESS অথবা CANCEL লিখুন।`,
     );
   }
+  if (/^(help|menu|সাহায্য|হেল্প|help me)$/.test(enquiryText(t))) {
+    return say(
+      "Welcome to BookHarbor's academic demo. I can help you:\n• Browse all available titles: BOOKS\n• Get a recommendation: recommend fantasy books\n• Filter by price: books under 800\n• Check delivery charges: DELIVERY\n• Contact the owner: HUMAN\nSend any book title to see its price and stock. Please use fictional details for demo orders.",
+      "BookHarbor demo-te ami help korte pari:\n• Sob boi: BOOKS\n• Recommendation: recommend fantasy books\n• Budget onujayi: books under 800\n• Delivery: DELIVERY\n• Owner-er help: HUMAN\nDam ebong stock jante boier naam likhun. Order-e shudhu fictional details din.",
+      "BookHarbor-এর নমুনা সহকারী আপনাকে সাহায্য করতে পারে:\n• সব বই দেখতে: BOOKS\n• পরামর্শ পেতে: recommend fantasy books\n• বাজেট অনুযায়ী: books under 800\n• ডেলিভারি: DELIVERY\n• মালিকের সহায়তা: HUMAN\nদাম ও মজুত জানতে বইয়ের নাম লিখুন। অর্ডারে শুধু কাল্পনিক তথ্য দিন।",
+    );
+  }
   if (appreciation(text)) return say(
     "You're welcome! If you need book recommendations or further assistance, please let me know.",
     "Apnake shagotom! Boi niye aro proshno thakle janaben.",
     "আপনাকে স্বাগতম! বই সম্পর্কে আরও কিছু জানতে চাইলে জানাবেন।",
   );
+  // Browse and recommendation enquiries are resolved only against current
+  // D1 catalogue data. They never select a product or start an order.
+  const discovery = discoverBooks(text, products);
+  if (discovery) {
+    delete s.product;
+    return { state: s, reply: discoveryReply(discovery, l), engine };
+  }
   let found = matchingProducts(text, products);
   if (found.length > 1)
     return say("Which book do you mean? Please send one title at a time.");
