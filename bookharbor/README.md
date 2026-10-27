@@ -80,6 +80,41 @@ an exact title still take precedence when they are not explicitly browsing.
 The existing order confirmation, shipping zones, stock checks and D1 schema
 remain unchanged. `tests/discovery.test.mjs` covers these rules locally.
 
+## Management Information Systems (MIS) textbooks
+
+Four real textbook titles are included as **fictional demo listings**. The
+authors and titles are based on publisher listings, but these are not confirmed
+physical inventory, editions, prices, or sale offers:
+
+| Textbook | Author(s) | Demo BDT price | Demo copies |
+| --- | --- | ---: | ---: |
+| Management Information Systems: Managing the Digital Firm | Kenneth C. Laudon, Jane P. Laudon | ৳1,890 | 8 |
+| Business Driven Information Systems | Paige Baltzan, Amy Phillips | ৳1,490 | 10 |
+| Information Systems Today: Managing in the Digital World | Joseph S. Valacich, Christoph Schneider, Matthew Hashim | ৳1,590 | 7 |
+| M: Information Systems | Paige Baltzan | ৳1,190 | 12 |
+
+The storefront now includes an **MIS textbooks** category chip, searchable
+catalogue cards, and a **Start demo order** button. The chatbot supports
+`MIS books`, `MIS boi ache?`, and Bengali-script MIS requests. It shows all
+four MIS titles; entering an exact title or selecting the card's order button
+starts the same validated single-title checkout used for the rest of the demo.
+
+The original eight books are unchanged. New local databases automatically
+receive the seed additions from `schema.sql`. **Existing Cloudflare D1 databases
+do not automatically load new SQL rows when only the Worker code is deployed.**
+After reviewing the change, run the additive
+`migrations/2026-10-27-add-mis-books.sql` remotely using Wrangler, as described
+in `DEPLOYMENT.md`. The migration is idempotent and does not overwrite existing
+stock or orders. These changes require both database migration **and** Worker
+deployment to appear in the live website and Messenger. Neither is performed by
+merging a GitHub PR.
+
+Publisher references (for textbook titles and authors, not sample prices):
+- Pearson: https://www.pearson.com/en-us/subject-catalog/p/management-information-systems-managing-the-digital-firm/P200000001392/9780136971542
+- McGraw Hill: https://www.mheducation.com/highered/product/business-driven-information-systems-baltzan.html
+- Pearson: https://www.pearson.com/en-us/subject-catalog/p/information-systems-today%3A-managing-the-digital-world/P200000001974/9780136524656
+- McGraw Hill: https://www.mheducation.com.sg/m-information-systems-9781264934669-asia-group
+
 ## Present to your professor
 
 1. Open Bookshop. Explain that all prices and inventory are fictional, inspired by book titles in the reference screenshots. The shop is not affiliated with Book Ocean BD.
