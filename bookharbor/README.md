@@ -61,6 +61,25 @@ Use `npm test` inside `bookharbor/` to run the existing regression suite
 plus `tests/customer-communication.test.mjs`. This does not contact Meta or
 Cloudflare. No automatic deployment is configured in CI.
 
+## Grounded catalogue discovery and help
+
+BookHarbor can now answer requests such as `recommend fantasy books`, `show
+books under 800`, `fiction books up to 690`, `books by Tolkien`, or `HELP`
+without relying on a generated claim. These responses use the real rows in
+the current `products` D1 table, exclude out-of-stock inventory, filter on
+product category, author, and price, and sort by actual price. Under/below means
+strictly less than the budget; up-to/within includes the limit. The assistant
+shows up to three general recommendations or five matching filtered titles.
+
+Recommendations are **catalogue suggestions, not bestseller rankings**. Prices
+exclude delivery charges. If no titles match, the assistant says so instead of
+inventing books or stock. English, Bangla, and Banglish variants are available.
+A discovery query clears the previously selected title to prevent a subsequent
+ambiguous "buy it" from silently ordering an unrelated book. Questions about
+an exact title still take precedence when they are not explicitly browsing.
+The existing order confirmation, shipping zones, stock checks and D1 schema
+remain unchanged. `tests/discovery.test.mjs` covers these rules locally.
+
 ## Present to your professor
 
 1. Open Bookshop. Explain that all prices and inventory are fictional, inspired by book titles in the reference screenshots. The shop is not affiliated with Book Ocean BD.
