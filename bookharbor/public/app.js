@@ -42,14 +42,26 @@ function renderCatalog() {
       (filter === "All" ||
         p.category === filter ||
         (filter === "Manga" && p.category === "Comics")) &&
-      (p.title + " " + p.author).toLowerCase().includes(query),
+      (p.title + " " + p.author + " " + p.category + " " + p.aliases +
+        (p.category === "Management Information Systems" ? " mis textbooks" : ""))
+        .toLowerCase().includes(query),
   )) {
     const card = node("article", "book-card"),
       stage = node("div", "cover-stage"),
       cover = node("div", "cover " + p.color);
+    // The original book-card headline retains the full title; the decorative
+    // cover uses a shortened label for long academic textbooks.
+    const coverTitles = {
+      "mis-digital-firm": "MIS: Digital Firm",
+      "mis-business-driven": "Business Driven IS",
+      "mis-today": "Information Systems Today",
+      "mis-m-baltzan": "M: Information Systems",
+    };
+    if (p.category === "Management Information Systems")
+      cover.classList.add("mis");
     cover.append(
       node("small", "", p.author),
-      node("b", "", p.title),
+      node("b", "", coverTitles[p.id] || p.title),
       node(
         "span",
         "ornament",
@@ -71,9 +83,12 @@ function renderCatalog() {
     );
     const bottom = node("div", "card-bottom"),
       ask = node("button", "ask", "Ask about it ↗");
-    ask.onclick = () => send(p.title + " price koto?");
+    ask.onclick = () => send("How much is " + p.title + "?");
     bottom.append(node("span", "price", "৳" + p.price.toLocaleString()), ask);
-    card.append(bottom);
+    const order = node("button", "order-demo", p.stock ? "Start demo order" : "Unavailable");
+    order.disabled = !p.stock;
+    order.onclick = () => send("Order " + p.title);
+    card.append(bottom, order);
     $("catalog").append(card);
   }
   if (!$("catalog").children.length)

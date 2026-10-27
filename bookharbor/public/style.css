@@ -320,6 +320,7 @@ h2 {
 }
 .filters {
   display: flex;
+  flex-wrap: wrap;
   gap: 7px;
   margin: 20px 0;
 }
@@ -410,6 +411,15 @@ h2 {
 .cover.rose {
   background: #aa727d;
 }
+.cover.mis b {
+  font-size: 12px;
+  line-height: 1.18;
+  overflow-wrap: break-word;
+}
+.cover.mis small {
+  font-size: 5px;
+  line-height: 1.3;
+}
 .stock {
   position: absolute;
   top: 9px;
@@ -454,6 +464,24 @@ h2 {
 .ask:disabled {
   opacity: 0.5;
   cursor: default;
+}
+.order-demo {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  padding: 7px 8px;
+  border: 1px solid #bad1bf;
+  border-radius: 6px;
+  background: #e9f2e7;
+  color: #1c5240;
+  font-size: 10px;
+  font-weight: 600;
+}
+.order-demo:disabled {
+  border-color: #e3e6dd;
+  background: #f1f1ed;
+  color: #929b90;
+  cursor: not-allowed;
 }
 footer {
   display: flex;
