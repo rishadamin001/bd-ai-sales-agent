@@ -67,11 +67,11 @@ export function messageLanguage(text, previous = "en") {
     "koto", "ache", "ase", "bhai", "bhaiya", "chai", "lagbe", "diben",
     "korbo", "amar", "boi", "den", "korte", "nibo", "nebo", "kinbo",
     "kivabe", "dorkar", "dam", "daam", "dui", "nil", "lal", "ferot",
-    "ki", "kemon", "eta", "eita", "hobe", "paowa jabe", "ki ki", "dhonnobad",
+    "ki", "kemon", "eta", "eita", "hobe", "paowa jabe", "ki ki", "dhonnobad", "koro",
   ])) return "bl";
   // These messages are selections/commands, not evidence of language preference.
   if (/^(?:\d+|confirm(?: order)?|yes|ok|cancel(?: order)?|reset|restart|blue|red|none|no wrap|human|agent|owner|staff|books|catalog|catalogue|order|buy|help|[\p{L}\p{M}]+(?: [\p{L}\p{M}]+){0,2})$/u.test(t) &&
-      !hasPhrase(t, ["hello", "hi", "hey", "thanks", "thank you", "price", "cost", "stock", "available", "delivery", "shipping", "payment", "return", "refund"])) {
+      !hasPhrase(t, ["hello", "hi", "hey", "thanks", "thank you", "price", "cost", "stock", "available", "delivery", "shipping", "payment", "return", "refund", "recommend", "suggest", "show me", "books under", "books by", "budget", "cheapest", "cheap", "which books"])) {
     return previous || "en";
   }
   if (hasPhrase(t, [
@@ -79,7 +79,7 @@ export function messageLanguage(text, previous = "en") {
     "what", "where", "when", "do you", "can i", "could you", "i want",
     "i would", "i need", "is it", "is there", "are you", "price", "cost",
     "available", "availability", "in stock", "delivery", "shipping",
-    "payment", "refund", "return", "buy", "recommend", "looking for",
+    "payment", "refund", "return", "buy", "recommend", "suggest", "show me", "which books", "books under", "books by", "budget", "cheapest", "cheap", "looking for",
   ])) return "en";
   return previous || "en";
 }
