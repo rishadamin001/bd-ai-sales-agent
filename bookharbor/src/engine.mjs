@@ -259,14 +259,17 @@ export async function transition(previous, text, products, ai) {
     "Apnake shagotom! Boi niye aro proshno thakle janaben.",
     "আপনাকে স্বাগতম! বই সম্পর্কে আরও কিছু জানতে চাইলে জানাবেন।",
   );
-  // Browse and recommendation enquiries are resolved only against current
-  // D1 catalogue data. They never select a product or start an order.
+  let found = matchingProducts(text, products);
+  // Discovery uses only D1 rows. When a question mentions one identifiable
+  // title (e.g. "Is Hobbit a fantasy book?"), prefer that exact book unless
+  // the customer explicitly asked for recommendations or a collection filter.
   const discovery = discoverBooks(text, products);
-  if (discovery) {
+  const explicitBrowse = /^(?:(?:can you |please )?(?:show|list|suggest|recommend)|which books|what books|any books|are there any|do you have any)/.test(enquiryText(t));
+  if (discovery && (!found.length || discovery.author || discovery.budget ||
+      discovery.cheap || discovery.recommend || explicitBrowse)) {
     delete s.product;
     return { state: s, reply: discoveryReply(discovery, l), engine };
   }
-  let found = matchingProducts(text, products);
   if (found.length > 1)
     return say("Which book do you mean? Please send one title at a time.");
   let intent = enquiryIntent(text);
