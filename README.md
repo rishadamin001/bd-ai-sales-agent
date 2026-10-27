@@ -1,11 +1,11 @@
 # Current MIS 465 project: BookHarbor BD
 
-The working Cloudflare + Facebook Messenger assignment is in **[bookharbor/](bookharbor/README.md)**.
+The Cloudflare + Facebook Messenger academic application is in **[bookharbor/](bookharbor/README.md)**.
 
 - [Live website](https://bookharbor-mis465.bookharbor-mis465.workers.dev)
 - [Messenger testing Page](https://m.me/1270406139500514) — use an accepted Meta app role while in Development mode.
-- [Setup instructions](bookharbor/DEPLOYMENT.md), [Messenger connection](bookharbor/MESSENGER-SETUP.md), and [verification record](bookharbor/VERIFICATION.md).
-- Verified 17 October 2026: 17 tests pass; real admin-profile Messenger messages and replies work, including Cloudflare AI.
+- [Setup instructions](bookharbor/DEPLOYMENT.md), [Messenger connection](bookharbor/MESSENGER-SETUP.md), [verification record](bookharbor/VERIFICATION.md), and [current project status](bookharbor/PROJECT_STATUS.md).
+- Last verified authorized-profile Messenger replies: 17 October 2026. Since then, PRs #4–#6 have added multilingual replies, MIS textbooks, grounded discovery and safer checkout; 88 GitHub CI tests passed after PR #6. This does not prove the latest code is deployed or publicly accessible.
 - Run locally: `cd bookharbor`, then `npm start`. Run checks with `npm test`. Install deployment dependencies with `npm ci`.
 - Private credentials, owner access files, databases and logs are excluded. Configure your own Cloudflare secrets.
 
