@@ -67,6 +67,18 @@ export async function transition(previous, text, products, ai) {
     reply: select(l, en, bl, bn),
     engine,
   });
+  const summarize = () => {
+    const p = products.find((x) => x.id === s.product);
+    s.pending = quote(p, s.quantity, s.zone);
+    s.step = "confirm";
+    const q = s.pending;
+    return say(
+      `DEMO ORDER\n${p.title} (${p.edition}) × ${s.quantity}\nWrap: ${s.wrap}\nBooks: ৳${q.subtotal} + delivery: ৳${q.delivery}\nTOTAL: ৳${q.total} (demo COD; no extra fees)\n${s.name} · ${s.phone}\n${s.address}\nReply CONFIRM, EDIT QUANTITY, EDIT WRAP, EDIT ADDRESS, or CANCEL.`,
+      `DEMO ORDER\n${p.title} × ${s.quantity}\nWrap: ${s.wrap}\nBoi ৳${q.subtotal} + delivery ৳${q.delivery}\nTotal ৳${q.total} (demo COD, extra charge nei)\n${s.name} · ${s.phone}\n${s.address}\nCONFIRM, EDIT QUANTITY, EDIT WRAP, EDIT ADDRESS, ba CANCEL likhun.`,
+      `ডেমো অর্ডার\n${p.title} × ${s.quantity}\nর‍্যাপ: ${s.wrap}\nবই ৳${q.subtotal} + ডেলিভারি ৳${q.delivery}\nমোট ৳${q.total} (ডেমো COD; অতিরিক্ত ফি নেই)\n${s.name} · ${s.phone}\n${s.address}\nCONFIRM, EDIT QUANTITY, EDIT WRAP, EDIT ADDRESS অথবা CANCEL লিখুন।`,
+    );
+  };
+
   if (t === "reset" || t === "restart" || t === "নতুন") {
     return {
       state: { step: "browse", language: l },
@@ -98,14 +110,27 @@ export async function transition(previous, text, products, ai) {
     };
   if (/^(cancel|বাতিল|cancel order|cancel korun|অর্ডার বাতিল|বাতিল করুন)$/.test(t)) {
     s.step = "browse";
-    delete s.pending;
+    // Clear incomplete personal details and selection from cancelled drafts.
+    for (const key of ["pending", "editing", "product", "quantity", "wrap",
+      "name", "phone", "address", "zone"]) delete s[key];
     return say(
-      "Draft cancelled. No order was placed. Type books to start again.",
+      "Your draft order has been cancelled. No order was placed. Type BOOKS to browse again.",
+      "Draft order cancel kora hoyeche. Kono order place hoyni. BOOKS likhe abar shuru korun.",
+      "আপনার খসড়া অর্ডার বাতিল করা হয়েছে। কোনো অর্ডার দেওয়া হয়নি। আবার শুরু করতে BOOKS লিখুন।",
     );
   }
   if (s.step === "quantity") {
     const q = quantity(t);
     const p = products.find((x) => x.id === s.product);
+    if (!p) {
+      s.step = "browse";
+      for (const key of ["editing", "pending", "product"]) delete s[key];
+      return say(
+        "That book is no longer listed. Please choose a title from BOOKS.",
+        "Ei boi ekhon catalogue-e nei. BOOKS theke arekti boi bachun.",
+        "বইটি এখন তালিকায় নেই। অনুগ্রহ করে BOOKS থেকে অন্য বই বেছে নিন।",
+      );
+    }
     if (!q || q > 10)
       return say(
         "How many copies? Enter a number from 1 to 10.",
@@ -115,6 +140,11 @@ export async function transition(previous, text, products, ai) {
     if (q > p.stock)
       return say(`Only ${p.stock} copies available. Please choose fewer.`);
     s.quantity = q;
+    if (s.editing === "quantity") {
+      delete s.editing;
+      s.step = "summary";
+      return summarize();
+    }
     s.step = "wrap";
     return say(
       "Gift wrap colour? Choose blue, red, or none (free).",
@@ -132,6 +162,11 @@ export async function transition(previous, text, products, ai) {
           : null;
     if (!wrap) return say("Please choose blue, red, or none.");
     s.wrap = wrap;
+    if (s.editing === "wrap") {
+      delete s.editing;
+      s.step = "summary";
+      return summarize();
+    }
     s.step = "name";
     return say(
       "Your fictional customer name? This is an academic demo.",
@@ -226,27 +261,40 @@ export async function transition(previous, text, products, ai) {
           order,
         };
       }
+    } else if (/^(edit quantity|change quantity|edit copies|change copies|পরিমাণ বদল|কপি বদল)$/.test(t)) {
+      s.step = "quantity";
+      s.editing = "quantity";
+      delete s.pending;
+      return say(
+        "How many copies would you like instead? Enter a number from 1 to 10. I'll show an updated total for approval.",
+        "Ebar koy copy niben? 1 theke 10-er moddhe number din. Updated total dekhabo.",
+        "এবার কত কপি নিতে চান? ১ থেকে ১০-এর মধ্যে সংখ্যা লিখুন। এরপর নতুন মোট মূল্য দেখাব।",
+      );
+    } else if (/^(edit wrap|change wrap|edit wrapping|change wrapping|র‍্যাপ বদল|মোড়ক বদল)$/.test(t)) {
+      s.step = "wrap";
+      s.editing = "wrap";
+      delete s.pending;
+      return say(
+        "Choose your new free gift-wrap option: BLUE, RED, or NONE. I'll show the updated summary for approval.",
+        "Notun gift wrap bachun: BLUE, RED, ba NONE. Updated summary dekhabo.",
+        "বিনামূল্যের নতুন র‍্যাপ বেছে নিন: BLUE, RED অথবা NONE। এরপর নতুন সারাংশ দেখাব।",
+      );
     } else if (/^(edit address|change address|ঠিকানা বদল)$/.test(t)) {
       s.step = "address";
+      delete s.pending;
       return say(
         "Enter the corrected fictional address, including area and district.",
+        "Notun fictional address, area ebong district likhun.",
+        "এলাকা ও জেলাসহ সংশোধিত কাল্পনিক ঠিকানা লিখুন।",
       );
     } else
       return say(
-        "Reply CONFIRM to place this demo order, EDIT ADDRESS to change the address, or CANCEL.",
+        "Please reply CONFIRM, EDIT QUANTITY, EDIT WRAP, EDIT ADDRESS, or CANCEL. Your order has not been placed yet.",
+        "CONFIRM, EDIT QUANTITY, EDIT WRAP, EDIT ADDRESS, ba CANCEL likhun. Ekhono order place hoyni.",
+        "অনুগ্রহ করে CONFIRM, EDIT QUANTITY, EDIT WRAP, EDIT ADDRESS অথবা CANCEL লিখুন। এখনো অর্ডার দেওয়া হয়নি।",
       );
   }
-  if (s.step === "summary") {
-    const p = products.find((x) => x.id === s.product);
-    s.pending = quote(p, s.quantity, s.zone);
-    s.step = "confirm";
-    const q = s.pending;
-    return say(
-      `DEMO ORDER\n${p.title} (${p.edition}) × ${s.quantity}\nWrap: ${s.wrap}\nBooks: ৳${q.subtotal} + delivery: ৳${q.delivery}\nTOTAL: ৳${q.total} (demo COD; no extra fees)\n${s.name} · ${s.phone}\n${s.address}\nReply CONFIRM, EDIT ADDRESS, or CANCEL.`,
-      `DEMO ORDER\n${p.title} × ${s.quantity}\nWrap: ${s.wrap}\nBoi ৳${q.subtotal} + delivery ৳${q.delivery}\nTotal ৳${q.total} (demo COD, extra charge nei)\n${s.name} · ${s.phone}\n${s.address}\nCONFIRM, EDIT ADDRESS, ba CANCEL likhun.`,
-      `ডেমো অর্ডার\n${p.title} × ${s.quantity}\nর‍্যাপ: ${s.wrap}\nবই ৳${q.subtotal} + ডেলিভারি ৳${q.delivery}\nমোট ৳${q.total} (ডেমো COD; অতিরিক্ত ফি নেই)\n${s.name} · ${s.phone}\n${s.address}\nCONFIRM, EDIT ADDRESS অথবা CANCEL লিখুন।`,
-    );
-  }
+  if (s.step === "summary") return summarize();
   if (/^(help|menu|সাহায্য|হেল্প|help me)$/.test(enquiryText(t))) {
     return say(
       "Welcome to BookHarbor's academic demo. I can help you:\n• Browse all available titles: BOOKS\n• Get a recommendation: recommend fantasy books\n• Filter by price: books under 800\n• Check delivery charges: DELIVERY\n• Contact the owner: HUMAN\nSend any book title to see its price and stock. Please use fictional details for demo orders.",
