@@ -92,19 +92,6 @@ export async function transition(previous, text, products, ai) {
     );
   };
 
-  if (choice) {
-    if (choice === "auto") return say(
-      "I'll follow the language of your next message.",
-      "Ekhon theke apnar message-er language follow korbo.",
-      "এখন থেকে আপনার বার্তার ভাষা অনুযায়ী উত্তর দেব।",
-    );
-    return say(
-      "Sure! I'll reply in English from now on.",
-      "Thik ache! Ekhon theke Banglish-e reply dibo.",
-      "অবশ্যই! এখন থেকে বাংলায় উত্তর দেব।",
-    );
-  }
-
   if (t === "reset" || t === "restart" || t === "নতুন") {
     return {
       state: { step: "browse", language: l, ...(s.languageLock ? { languageLock: s.languageLock } : {}) },
@@ -134,6 +121,19 @@ export async function transition(previous, text, products, ai) {
       ),
       silent: true,
     };
+  if (choice) {
+    if (choice === "auto") return say(
+      "I'll follow the language of your next message.",
+      "Ekhon theke apnar message-er language follow korbo.",
+      "এখন থেকে আপনার বার্তার ভাষা অনুযায়ী উত্তর দেব।",
+    );
+    return say(
+      "Sure! I'll reply in English from now on.",
+      "Thik ache! Ekhon theke Banglish-e reply dibo.",
+      "অবশ্যই! এখন থেকে বাংলায় উত্তর দেব।",
+    );
+  }
+
   // Common sales questions must never be mistaken for book names.
   // Handle discounts while browsing or reviewing an order without changing
   // any price, stock, selection, or pending confirmation.
