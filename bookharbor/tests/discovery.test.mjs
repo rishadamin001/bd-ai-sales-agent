@@ -32,7 +32,7 @@ test("genre requests use actual catalogue categories and in-stock rows", async (
   const manga = await transition(null, "Do you have manga books?", products, noAI);
   assert.match(manga.reply, /Hunter × Hunter Vol. 38 — ৳890/);
   const romance = await transition(null, "Do you have romance books?", products, noAI);
-  assert.match(romance.reply, /couldn't find any currently available romance books/);
+  assert.match(romance.reply, /couldn't find any in-stock romance books/);
   assert.doesNotMatch(romance.reply, /Watch Me —/);
 });
 
@@ -62,11 +62,11 @@ test("author catalogue filters do not hallucinate books or creators", async () =
 test("Bangla and Banglish recommendations are localized and use catalog data", async () => {
   const bn = await transition(null, "ফ্যান্টাসি বই সাজেস্ট করেন", products, noAI);
   assert.equal(bn.state.language, "bn");
-  assert.match(bn.reply, /আমাদের ডেমো তালিকা/);
+  assert.match(bn.reply, /মজুত থাকা fantasy books/);
   assert.match(bn.reply, /The Hobbit — ৳650/);
   const bl = await transition(null, "fantasy boi suggest koro", products, noAI);
   assert.equal(bl.state.language, "bl");
-  assert.match(bl.reply, /Amader demo catalogue/);
+  assert.match(bl.reply, /Available fantasy books/);
   assert.match(bl.reply, /The Hobbit — ৳650/);
   const en = await transition({ step: "browse", language: "bn" }, "Show me fantasy books", products, noAI);
   assert.equal(en.state.language, "en");
@@ -111,7 +111,7 @@ test("HELP offers a clear menu in the right language without interrupting checko
   assert.match(en.reply, /recommend fantasy books/);
   assert.match(en.reply, /HUMAN/);
   const bn = await transition(null, "সাহায্য", products, noAI);
-  assert.match(bn.reply, /BookHarbor-এর নমুনা সহকারী/);
+  assert.match(bn.reply, /বই দেখতে BOOKS/);
   const bl = await transition({ step: "browse", language: "bl" }, "menu", products, noAI);
   assert.match(bl.reply, /BookHarbor demo-te/);
   const duringOrder = await transition({ step: "quantity", product: "hobbit" }, "help", products, noAI);
