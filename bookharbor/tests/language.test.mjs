@@ -88,8 +88,8 @@ for (const [text, expected] of [
   ["Can I pay for Hobbit with bKash?", /No payment is collected/],
   ["boi ferot deya jabe?", /48 hours/],
   ["বই ফেরত দেওয়া যাবে?", /48 hours/],
-  ["ki ki boi ache?", /DEMO CATALOGUE/],
-  ["বইগুলো দেখান", /DEMO CATALOGUE/],
+  ["ki ki boi ache?", /ta boi stock-e ache/],
+  ["বইগুলো দেখান", /বইয়ের তালিকা/],
   ["assalamualaikum!", /BookHarbor/],
 ]) test(`local enquiry: ${text}`, async () => {
   const r = await transition(null, text, products, noAI);
