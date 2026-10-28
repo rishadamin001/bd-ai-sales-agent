@@ -115,18 +115,16 @@ export function discoveryReply(discovery, language) {
   const criteria = filters.length ? filters.join(", ") : "books";
   if (!totalMatches) {
     if (language === "bn")
-      return `আমাদের নমুনা তালিকায় এখন মজুত থাকা ${criteria} পাওয়া যায়নি। সব বই দেখতে BOOKS অথবা সহায়তার জন্য HUMAN লিখুন।`;
+      return `এখন ${criteria} মজুত নেই। অন্য বই দেখতে BOOKS লিখুন।`;
     if (language === "bl")
-      return `Amader demo catalogue-e ekhon available ${criteria} nei. Sob boi dekhte BOOKS, help-er jonno HUMAN likhun.`;
-    return `I couldn't find any currently available ${criteria} in our demo catalogue. Type BOOKS to browse the full list or HUMAN for help from the owner.`;
+      return `Ekhon ${criteria} stock-e nei. Onno boi dekhte BOOKS likhun.`;
+    return `I couldn't find any in-stock ${criteria}. Try BOOKS to browse other titles.`;
   }
   const items = matches.map((p) => `• ${p.title} — ৳${p.price} (${p.stock} available)`).join("\n");
-  const more = totalMatches > matches.length
-    ? `\n${totalMatches - matches.length} additional matching titles are not shown here.`
-    : "";
+  const extra = totalMatches - matches.length;
   if (language === "bn")
-    return `আমাদের ডেমো তালিকা থেকে মজুত থাকা ${criteria} (দাম অনুযায়ী):\n${items}${more}\nডেলিভারি চার্জ আলাদা। বিস্তারিত জানতে একটি বইয়ের নাম লিখুন।`;
+    return `মজুত থাকা ${criteria} (দাম অনুযায়ী):\n${items}${extra ? `\nআরও ${extra}টি মিল রয়েছে।` : ""}\nবিস্তারিত জানতে বইয়ের নাম লিখুন।`;
   if (language === "bl")
-    return `Amader demo catalogue-er available ${criteria} (kom dam age):\n${items}${more}\nDelivery charge alada. Details jante boier naam likhun.`;
-  return `Here are currently available ${criteria} from our demo catalogue (lowest price first):\n${items}${more}\nDelivery is charged separately. Send an exact title for details; these are catalogue options, not popularity rankings.`;
+    return `Available ${criteria} (kom dam age):\n${items}${extra ? `\nAro ${extra} ta title ache.` : ""}\nDetails jante boier naam likhun.`;
+  return `Here are currently available ${criteria} (lowest price first):\n${items}${extra ? `\n${extra} more matching titles.` : ""}\nSend a title for details.`;
 }
