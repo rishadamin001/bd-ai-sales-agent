@@ -25,6 +25,7 @@
 		"GRAPH_VERSION": "v24.0",
 		"AI_MODEL": "@cf/qwen/qwen3-30b-a3b-fp8",
 		"AI_ENABLED": "true",
+		"GEMINI_MODEL": "gemini-3.5-flash-lite",
 		"DEMO_ONLY": "true",
 	},
 	"triggers": {
