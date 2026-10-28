@@ -146,6 +146,16 @@ Publisher references (for textbook titles and authors, not sample prices):
 - Pearson: https://www.pearson.com/en-us/subject-catalog/p/information-systems-today%3A-managing-the-digital-world/P200000001974/9780136524656
 - McGraw Hill: https://www.mheducation.com.sg/m-information-systems-9781264934669-asia-group
 
+## BookHarbor AI v2 — language memory, follow-ups and optional Gemini
+
+- Customers can explicitly say `Switch to English`, `Can you speak in English from now?`, `Accha Banglay bolo`, or `Switch to Banglish` to lock a language choice. `Auto language` restores automatic detection. Language preference survives `reset` and does not confirm an order.
+- `Recommend me one` selects exactly one **in-stock D1 title** instead of showing a list; `Who wrote it?`, `Why should I read it?` and `How much is it?` refer to that book. Prices/authors/categories always come from D1, not generated text.
+- `src/gemini.mjs` provides **optional** Gemini classification for otherwise difficult short bookstore questions. `GEMINI_ENABLED` is off by default and requires a private `GEMINI_API_KEY` Worker secret; the default model is `gemini-3.5-flash-lite`. If Gemini cannot be used, the existing Cloudflare Workers AI classifier and local rules remain available.
+- The external model receives no saved conversation transcript, phone/address/order state, or customer account ID. Inputs are filtered and output product IDs must match the real catalogue. Only short non-transactional small talk can use generated reply text; order totals, price, discounts, stock and checkout remain code-owned.
+- No new D1 tables, Facebook permissions, API billing plan or other platform connections are required to build or test this version.
+
+**Deployment:** Review [DEPLOYMENT.md](DEPLOYMENT.md) before creating an API key. Never paste API tokens into this repository. Run `npm test` for the new `tests/ai-v2.test.mjs` regressions plus existing order safety tests.
+
 ## Editing an unconfirmed demo order
 
 After seeing the final demo order summary, a customer can now send
