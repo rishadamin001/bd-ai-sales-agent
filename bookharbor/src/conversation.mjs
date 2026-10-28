@@ -6,9 +6,14 @@ export function languagePreference(text) {
   if (/^(?:auto language|detect language automatically|automatic language|language auto|use my language)$/.test(t))
     return "auto";
   if (/^(?:please )?(?:(?:switch|change)(?: language)? to english|use english(?: from now on)?|english(?: only| please| from now on)?)$/.test(t) ||
+      // Native Bangla/Banglish language-change commands take priority over
+      // both the current language lock and ordinary book-intent detection.
+      /^(?:(?:এখন থেকে|প্লিজ|দয়া করে|দয়া করে) )?(?:ইংরেজিতে|ইংলিশে|ইংরেজি তে|ইংরেজি ভাষায়|ইংরেজি ভাষায়)(?: (?:সুইচ|চেঞ্জ|পরিবর্তন) (?:করো|করুন|করেন|করে দাও|করে দিন)| (?:বলো|বলুন|বলবেন|উত্তর দাও|উত্তর দিন|রিপ্লাই দাও|রিপ্লাই দিন|কথা বলো|কথা বলুন|কথা বলবেন))$/.test(t) ||
+      /^(?:(?:please|ekhon theke|accha|acha) )?(?:english e|english a|english te|ingrejite|inglishe) (?:switch koro|switch koren|change koro|bolo|bolen|reply dao|kotha bolo|kotha bolen)$/.test(t) ||
       /^(?:(?:can|could) you )?(?:please )?(?:speak|reply|talk|respond)(?: to me)?(?: in)? english(?: from now(?: on)?)?$/.test(t))
     return "en";
   if (/^(?:please )?(?:(?:switch|change)(?: language)? to (?:bangla|bengali)|use (?:bangla|bengali)|(?:bangla|bengali)(?: only| please| from now on)?)$/.test(t) ||
+      /^(?:(?:এখন থেকে|প্লিজ|দয়া করে|দয়া করে) )?(?:বাংলায়|বাংলায়|বাংলা ভাষায়|বাংলা ভাষায়) (?:সুইচ|চেঞ্জ|পরিবর্তন) (?:করো|করুন|করেন|করে দাও|করে দিন)$/.test(t) ||
       /^(?:(?:can|could) you )?(?:please )?(?:speak|reply|talk|respond)(?: to me)?(?: in)? (?:bangla|bengali)(?: from now(?: on)?)?$/.test(t) ||
       /^(?:(?:accha|acha|ekhon|please) )?(?:banglay|bangla te|bengali te) (?:bolo|bolen|bolun|kotha bolo)$/.test(t) ||
       /^(?:বাংলায়|বাংলায়) (?:বলুন|বলো|কথা বলুন|উত্তর দিন)$/.test(t))
