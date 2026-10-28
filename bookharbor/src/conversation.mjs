@@ -5,12 +5,16 @@ export function languagePreference(text) {
   const t = enquiryText(text);
   if (/^(?:auto language|detect language automatically|automatic language|language auto|use my language)$/.test(t))
     return "auto";
-  if (/^(?:(?:please )?(?:switch|change)(?: (?:the|your))? language to|(?:please )?(?:switch|change) to|(?:please )?(?:speak|reply|talk|respond)(?: to me)? in|can you (?:please )?(?:speak|reply|talk|respond)(?: to me)? in|can you (?:please )?(?:speak|reply|talk|respond) in|(?:from now (?:on )?)?(?:use|speak)) english(?: (?:from now|from now on|only|please))?|english(?: from now on| only| please)?)$/.test(t) ||
-      /^(?:can you|could you) (?:please )?(?:speak|reply|talk|respond) (?:in )?english(?: from now(?: on)?)?$/.test(t))
+  if (/^(?:please )?(?:(?:switch|change)(?: language)? to english|use english(?: from now on)?|english(?: only| please| from now on)?)$/.test(t) ||
+      /^(?:(?:can|could) you )?(?:please )?(?:speak|reply|talk|respond)(?: to me)?(?: in)? english(?: from now(?: on)?)?$/.test(t))
     return "en";
-  if (/^(?:(?:please )?(?:switch|change)(?: (?:the|your))? language to|(?:please )?(?:switch|change) to|(?:please )?(?:speak|reply|talk|respond)(?: to me)? in|can you (?:please )?(?:speak|reply|talk|respond)(?: to me)? in) (?:bangla|bengali)|(?:speak|reply|talk|respond) (?:bangla|bengali)|(?:bangla|bengali)(?: from now on| only| please)?|(?:accha |acha |ekhon |please )?(?:banglay|bangla te|bengali te) (?:bolo|bolen|bolun|kotha bolo)|বাংলায় (?:বলুন|বলো|কথা বলুন|উত্তর দিন)|বাংলায় (?:বলুন|বলো|কথা বলুন|উত্তর দিন))$/.test(t))
+  if (/^(?:please )?(?:(?:switch|change)(?: language)? to (?:bangla|bengali)|use (?:bangla|bengali)|(?:bangla|bengali)(?: only| please| from now on)?)$/.test(t) ||
+      /^(?:(?:can|could) you )?(?:please )?(?:speak|reply|talk|respond)(?: to me)?(?: in)? (?:bangla|bengali)(?: from now(?: on)?)?$/.test(t) ||
+      /^(?:(?:accha|acha|ekhon|please) )?(?:banglay|bangla te|bengali te) (?:bolo|bolen|bolun|kotha bolo)$/.test(t) ||
+      /^(?:বাংলায়|বাংলায়) (?:বলুন|বলো|কথা বলুন|উত্তর দিন)$/.test(t))
     return "bn";
-  if (/^(?:(?:please )?(?:switch|change)(?: (?:the|your))? language to|(?:please )?(?:switch|change) to|(?:please )?(?:speak|reply|talk|respond)(?: to me)? in) banglish|banglish(?: from now on| only| please)?|(?:banglish e|banglishe) (?:bolo|bolun|reply dao))$/.test(t))
+  if (/^(?:please )?(?:(?:switch|change)(?: language)? to banglish|use banglish(?: from now on)?|banglish(?: only| please| from now on)?)$/.test(t) ||
+      /^(?:banglish e|banglishe) (?:bolo|bolun|reply dao)$/.test(t))
     return "bl";
   return null;
 }
