@@ -143,7 +143,8 @@ export function requestedUnlistedTitle(text) {
     title = t; // e.g. "Dune" or "Atomic Habits", not arbitrary lowercase commands.
   }
   if (!title) return null;
-  title = title.replace(/^(?:a copy of|the book called|the book named|the book|book called|book named) /, "").trim();
+  title = title.replace(/^(?:a copy of|the book called|the book named|the book|book called|book named) /, "")
+    .replace(/(?: available| in stock| stock e)$/u, "").trim();
   const common = /^(?:it|this|that|this book|the book|a book|any book|any books|more books|books|book|anything|something|everything|one|two|eta|eita|এটা|এই বইটা|এইটা|this one|help|hello|thanks|thank you|price|delivery|payment|a recommendation|recommendations)$/;
   // Descriptions are not book titles. Pass them to the constrained AI classifier.
   if (/^(?:the |an? )?(?:adventure|story|novel|book|fantasy|mystery|romance) (?:about|with|like|by)\b/.test(title) ||

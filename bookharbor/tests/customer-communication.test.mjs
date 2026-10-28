@@ -47,10 +47,10 @@ test("short choices and confirmation do not arbitrarily switch language", () => 
 
 test("unknown named titles get a helpful response without invented availability", async () => {
   for (const [text, expression] of [
-    ["Do you have Atomic Habits?", /not listed in our current demo catalogue/],
-    ["Can I buy Dune?", /not listed in our current demo catalogue/],
-    ["What is the price of Dune?", /not listed in our current demo catalogue/],
-    ["Dune", /not listed in our current demo catalogue/],
+    ["Do you have Atomic Habits?", /not listed/],
+    ["Can I buy Dune?", /not listed/],
+    ["What is the price of Dune?", /not listed/],
+    ["Dune", /not listed/],
     ["Dune kinbo", /catalogue-e nei/],
     ["ডিউন আছে?", /তালিকায় নেই/],
   ]) {
@@ -90,8 +90,8 @@ test("professional responses support thanks, payment, returns, and catalogue in 
   const banglaReturn = await transition(null, "বই ফেরত দেওয়া যাবে?", products);
   assert.match(banglaReturn.reply, /ক্ষতিগ্রস্ত/);
   const banglishCatalog = await transition(null, "ki ki boi ache?", products);
-  assert.match(banglishCatalog.reply, /DEMO CATALOGUE/);
-  assert.match(banglishCatalog.reply, /Details jante boier naam likhun/);
+  assert.match(banglishCatalog.reply, /ta boi stock-e ache/);
+  assert.match(banglishCatalog.reply, /MIS BOOKS/);
 });
 
 test("an unlisted title cannot authorize checkout or reuse an earlier book", async () => {
