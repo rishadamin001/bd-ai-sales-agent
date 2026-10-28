@@ -24,7 +24,7 @@ export function wantsOneRecommendation(text) {
   if (negativeRequest(text)) return false;
   const t = enquiryText(text);
   return /\b(?:recommend|suggest|sajest)(?: me)? (?:just |only )?(?:one|1|a single)(?: book| title)?\b/.test(t) ||
-    /\b(?:recommend|suggest)(?: me)? (?:a|one) (?:good |single |fantasy |fiction |mis )?book\b/.test(t) ||
+    /\b(?:recommend|suggest)(?: me)? (?:(?:a )?single|one) (?:good |fantasy |fiction |mis )?book\b/.test(t) ||
     /\b(?:one|single) (?:book|title) (?:recommendation|suggestion)\b/.test(t) ||
     /\b(?:ekta|akta|ekti) boi (?:suggest|sajest|recommend)\b/.test(t) ||
     /(?:একটা|একটি) বই (?:সাজেস্ট|রিকমেন্ড|সুপারিশ)/.test(t);
