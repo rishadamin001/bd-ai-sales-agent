@@ -32,7 +32,43 @@ export const wantsOrder = (text) => !negativeRequest(text) && hasPhrase(text, [
 export const contextualOrder = (text) => /^(?:(?:i want to|i would like to|please) )?(?:order|buy)(?: (?:it|this|this book))?(?: please)?$/.test(enquiryText(text)) ||
   /^(?:eta |eita |এই বইটা |এটা )?(?:nibo|nebo|kinbo|nite chai|অর্ডার|কিনব|কিনবো|নেব|নেবো|চাই)$/.test(enquiryText(text));
 
+/**
+ * A discount or promotion question is a shop-policy enquiry, never a title.
+ * Do not infer an offer from AI or make adjustments to catalogue prices.
+ */
+export function discountEnquiry(text) {
+  const t = enquiryText(text);
+  return hasPhrase(t, [
+    "discount", "discounts", "coupon", "coupons", "voucher", "promo",
+    "promotion", "promotions", "special offer", "special offers",
+    "any offer", "any offers", "offer available", "offers available",
+    "ছাড়", "ছাড়", "ডিসকাউন্ট", "অফার", "chhar", "chaar", "kombe naki",
+  ]) || /^(?:offers?|any offers?)$/.test(t);
+}
+
+/**
+ * Recognize requests for the shop's selection without guessing that
+ * "any books" or "ki ki book available" is a particular book title.
+ * Keep specific titles, genre filters and author searches separate.
+ */
+export function generalCatalogQuestion(text) {
+  const t = enquiryText(text);
+  return [
+    /^(?:what|which) (?:books?|titles?)(?: (?:do you|have you) (?:have|sell|stock)| (?:are|do you have) (?:currently )?(?:available|in stock))?$/,
+    /^(?:can|could) you (?:please )?(?:show|send|give|share)(?: me| us)? (?:the |your |a )?(?:book list|books? list|catalogue|catalog|available books?|books?|titles?)$/,
+    /^(?:do you (?:have|sell|stock)|are there) (?:any |some )?(?:books?|titles?)(?: (?:available|in stock|to buy))?$/,
+    /^(?:show|list|send)(?: me)? (?:all |your |the )?(?:available |in stock )?(?:books?|titles?)$/,
+    /^(?:available |in stock )?(?:books?|titles?) (?:list|available|in stock)$/,
+    /^(?:(?:tomar|apnar|toder|tomader)(?: kase| kache)? )?(?:ki ki|kon kon) (?:books?|boi)(?: available| in stock| stock e)?(?: ache| ase| ache naki| ase naki)?$/,
+    /^(?:ki ki|kon kon) boi(?: ache| ase)?$/,
+    /^(?:কি কি|কোন কোন) (?:বই|বইগুলো)(?: (?:আছে|পাওয়া যায়|পাওয়া যায়|দেখান))?$/,
+    /^(?:আপনাদের|তোমাদের) কাছে (?:কি কি|কোন কোন) বই(?: (?:আছে|পাওয়া যায়|পাওয়া যায়))?$/,
+  ].some((pattern) => pattern.test(t));
+}
+
 export function enquiryIntent(text) {
+  if (discountEnquiry(text)) return "discount";
+  if (generalCatalogQuestion(text)) return "catalog_overview";
   if (hasPhrase(text, ["delivery", "shipping", "charge", "ডেলিভারি", "ডেলিভারির", "চার্জ", "পাঠাতে", "পৌঁছাতে"])) return "delivery";
   if (hasPhrase(text, ["return", "returns", "exchange", "refund", "ferot", "ফেরত", "বদল"])) return "returns";
   if (hasPhrase(text, ["payment", "pay", "bkash", "bikash", "nagad", "cod", "পেমেন্ট", "বিকাশ", "নগদ"])) return "payment";
@@ -71,7 +107,7 @@ export function messageLanguage(text, previous = "en") {
   ])) return "bl";
   // These messages are selections/commands, not evidence of language preference.
   if (/^(?:\d+|confirm(?: order)?|yes|ok|cancel(?: order)?|reset|restart|blue|red|none|no wrap|human|agent|owner|staff|books|catalog|catalogue|order|buy|help|[\p{L}\p{M}]+(?: [\p{L}\p{M}]+){0,2})$/u.test(t) &&
-      !hasPhrase(t, ["hello", "hi", "hey", "thanks", "thank you", "price", "cost", "stock", "available", "delivery", "shipping", "payment", "return", "refund", "recommend", "suggest", "show me", "books under", "books by", "budget", "cheapest", "cheap", "which books", "mis books", "mis textbooks", "management information systems", "information systems", "textbooks", "textbook"])) {
+      !hasPhrase(t, ["hello", "hi", "hey", "thanks", "thank you", "price", "cost", "stock", "available", "delivery", "shipping", "payment", "return", "refund", "recommend", "suggest", "show me", "books under", "books by", "budget", "cheapest", "cheap", "discount", "discounts", "coupon", "special offer", "offers", "which books", "mis books", "mis textbooks", "management information systems", "information systems", "textbooks", "textbook"])) {
     return previous || "en";
   }
   if (hasPhrase(t, [
@@ -79,7 +115,7 @@ export function messageLanguage(text, previous = "en") {
     "what", "where", "when", "do you", "can i", "could you", "i want",
     "i would", "i need", "is it", "is there", "are you", "price", "cost",
     "available", "availability", "in stock", "delivery", "shipping",
-    "payment", "refund", "return", "buy", "recommend", "suggest", "show me", "which books", "books under", "books by", "budget", "cheapest", "cheap", "looking for", "mis books", "mis textbooks", "management information systems", "information systems", "textbooks", "textbook",
+    "payment", "refund", "return", "buy", "recommend", "suggest", "show me", "which books", "books under", "books by", "budget", "cheapest", "cheap", "discount", "discounts", "coupon", "offers", "looking for", "mis books", "mis textbooks", "management information systems", "information systems", "textbooks", "textbook",
   ])) return "en";
   return previous || "en";
 }
@@ -89,6 +125,9 @@ export function messageLanguage(text, previous = "en") {
  * inventory or substitute a previously selected product.
  */
 export function requestedUnlistedTitle(text) {
+  // A general stock/promotion enquiry is never a title; it belongs to the
+  // policy or browse path even when "available" or "is there" is present.
+  if (discountEnquiry(text) || generalCatalogQuestion(text)) return null;
   const t = enquiryText(text);
   const patterns = [
     /^(?:do you (?:have|sell|stock|carry)|have you got|do you carry|is there|can i (?:buy|order)|i (?:want|would like) to (?:buy|order)|(?:please )?(?:order|buy)) (.+?)(?: (?:available|in stock|please))?$/,
