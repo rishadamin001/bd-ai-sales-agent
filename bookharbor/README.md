@@ -80,6 +80,37 @@ an exact title still take precedence when they are not explicitly browsing.
 The existing order confirmation, shipping zones, stock checks and D1 schema
 remain unchanged. `tests/discovery.test.mjs` covers these rules locally.
 
+## Concise customer questions and intent handling
+
+The customer-service rules now distinguish **general questions from book
+titles**, before attempting any unlisted-title lookup or AI classification.
+This prevents `Is there any discount?` being interpreted as a book called
+“Any Discount”, and `Tomar kase ki ki book available ache?` being
+interpreted as a book title. The assistant gives a short, language-matched
+answer instead of a long generic script. Examples:
+
+- **Discount:** `Is there any discount?` → no discount currently listed;
+  the stored catalogue prices remain unchanged. The bot never promises a
+  discount or alters the order total.
+- **Browsing:** `What books do you have?` / `Ki ki boi ache?` → quick
+  count and three examples; explicit `BOOKS` still returns the full list.
+  `MIS BOOKS` still filters the Management Information Systems category.
+- **Unlisted titles:** `Zero to One available ache?` / `Do you have Dune?`
+  → short, honest availability message without invented prices.
+- **Voice/attachments:** a customer who sends an unsupported audio or media
+  attachment is told to type their question. **Speech-to-text is not
+  implemented.**
+
+The existing deterministic price, stock, delivery, checkout and confirmation
+logic is unchanged. Simulated-order disclosures remain in appropriate
+welcome/checkout messages, not in every unrelated catalogue question.
+
+Regression tests in `tests/concise-intents.test.mjs` cover the reported
+Messenger examples, language switching, no fake discount, checkout safety and
+short replies. These automated tests do not themselves prove a live Messenger
+reply; deploy to the existing Worker and use the role-authorized test Page
+for end-to-end verification.
+
 ## Management Information Systems (MIS) textbooks
 
 Four real textbook titles are included as **fictional demo listings**. The
