@@ -72,6 +72,10 @@ export async function classifyWithGemini(env, text, products, context = {}, fetc
     "Use explain_book for conversational questions about the prior book in query.prior_book_id.",
     "If you cannot classify, return intent unknown with product_id null.",
   ].join(" ");
+  // Diagnostics contain no question, customer identifier, API key, or
+  // generated text. A successful Messenger reply alone does not prove that
+  // Gemini was called, since most common questions use local rules.
+  console.info(JSON.stringify({ event: "bookharbor_gemini", stage: "attempt" }));
   const response = await fetchFn(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`,
     {
@@ -85,7 +89,21 @@ export async function classifyWithGemini(env, text, products, context = {}, fetc
       signal: AbortSignal.timeout(5500),
     },
   );
-  if (!response.ok) throw Error("Gemini API unavailable");
+  if (!response.ok) {
+    // HTTP status helps distinguish missing access (403), model errors
+    // (404), quotas (429), and service issues without leaking any secrets.
+    console.warn(JSON.stringify({
+      event: "bookharbor_gemini",
+      stage: "http_error",
+      status: response.status,
+    }));
+    throw Error("Gemini API unavailable");
+  }
   const data = await response.json();
-  return parseGeminiClassification(data, products);
+  const result = parseGeminiClassification(data, products);
+  console.info(JSON.stringify({
+    event: "bookharbor_gemini",
+    stage: result && result.intent !== "unknown" ? "classified" : "fallback",
+  }));
+  return result;
 }
