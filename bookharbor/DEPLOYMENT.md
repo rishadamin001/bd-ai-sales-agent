@@ -6,6 +6,65 @@ The database and deployment are already provisioned in the owner's account. The 
 
 To securely save rotated Meta secrets on this computer, run `scripts/configure-facebook.ps1` in PowerShell. Actual Messenger delivery still requires the Meta webhook setup below.
 
+## Optional BookHarbor AI v2: private Gemini integration
+
+This is an **opt-in** enhancement. Existing Cloudflare Workers AI continues
+to work without any Gemini configuration. Do not create another Worker, D1
+database, Facebook Page, or business portfolio.
+
+**Model:** `gemini-3.5-flash-lite` (the current free-tier-first stable
+option). Check the live model availability and free-tier quota for your own
+Google AI Studio project before activating. Gemini 2.5 Flash may have
+limited access for new projects. Google says free-tier content may be used to
+improve its products. Do not send customer personal information or actual
+orders to its free API.
+
+### Setup without publishing an API key
+
+1. Open <https://aistudio.google.com/api-keys> and create a dedicated Gemini
+   API key in your own Google project; use a **Free** project if eligible.
+   Do not enable paid billing merely for this academic demo. Check usage
+   limits at <https://ai.google.dev/gemini-api/docs/pricing>.
+2. In the existing Cloudflare dashboard, open **Workers & Pages** →
+   **bookharbor-mis465** → **Settings** → **Variables and Secrets**.
+   Add `GEMINI_API_KEY` as a **Secret**, entering the value privately.
+   Do not paste it in GitHub, Messenger, a chat, `wrangler.jsonc`, or any
+   repository file.
+3. Keep the existing `AI_ENABLED=true` for Cloudflare Workers AI fallback.
+   The application checks `GEMINI_ENABLED`; until it equals the literal
+   string `true`, no Gemini requests are made. For the first deployment,
+   leave it absent. After GitHub CI and a test message succeed, add
+   `GEMINI_ENABLED` with value `true` as another Worker secret
+   (or change its existing value).
+4. Run the existing GitHub **BookHarbor controlled Cloudflare deploy**
+   workflow on `main` (Worker and database names both
+   `bookharbor-mis465`). The already-applied MIS migration uses
+   `INSERT OR IGNORE` and does not reset stock.
+5. Test with an authorized Messenger account: `Switch to English`,
+   `Recommend me one`, `Why should I read it?`, `Auto language`,
+   `Accha Banglay bolo`, and `Is there any discount?`.
+   Also test an out-of-stock book and ensure `CONFIRM` is only effective
+   inside an explicit order-confirmation step.
+6. If Gemini fails or exhausts its free tier, BookHarbor should fall back to
+   the existing Cloudflare classifier or local rules. To disable external
+   Gemini calls immediately, set `GEMINI_ENABLED` to `false`; the
+   existing Messenger, catalogue and order system keep working.
+
+The Gemini request includes only a bounded bookstore question, the
+preferred language, last selected catalogue ID (if any), and public
+catalogue titles/genres/authors. A fail-closed filter rejects identifiable
+phone numbers, emails, address-like details, order actions and other
+sensitive inputs before calling Google. Checkout fields, actual order
+details and confirmation are processed locally without Gemini. A structured
+response must match an existing catalogue ID, and free-form model output
+is accepted only for limited small talk (no prices, stock, discounts,
+payment or checkout claims).
+
+The Gemini model cannot alter prices, stock or orders. Do not claim the
+new AI is live until you see a successful deployment **and** an actual
+Messenger reply. Google API and Cloudflare costs/quotas can change:
+monitor Google AI Studio usage and Cloudflare metrics.
+
 ## Option A: controlled deployment from GitHub (recommended)
 
 The repository now includes a **manual-only GitHub Actions** workflow called
