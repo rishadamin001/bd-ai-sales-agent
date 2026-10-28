@@ -1,4 +1,5 @@
 import { transition } from "./engine.mjs";
+import { classifyWithGemini } from "./gemini.mjs";
 export const all = async (db, sql, ...args) =>
   (
     await db
@@ -16,7 +17,18 @@ export const run = (db, sql, ...args) =>
     .prepare(sql)
     .bind(...args)
     .run();
-export async function classify(env, text, products) {
+export async function classify(env, text, products, context = {}) {
+  // New provider is explicitly opt-in. Any Gemini outage, invalid response
+  // or free-tier limit falls back to the pre-existing Cloudflare classifier.
+  if (env.GEMINI_ENABLED === "true" && env.GEMINI_API_KEY) {
+    try {
+      const result = await classifyWithGemini(env, text, products, context);
+      if (result && result.intent !== "unknown") return result;
+    } catch {
+      // No tokens, request content, customer data or account IDs in logs.
+      console.warn("Gemini classifier unavailable; using existing fallback.");
+    }
+  }
   if (!env.AI || env.AI_ENABLED !== "true") return null;
   // Only intent classification: personal order details are handled by fixed local code.
   const clean = text
@@ -82,8 +94,12 @@ export async function handleEvent(env, event) {
         state,
         event.text,
         products,
-        env.AI && env.AI_ENABLED === "true"
-          ? (t, p) => classify(env, t, p)
+        (env.AI && env.AI_ENABLED === "true") ||
+        (env.GEMINI_ENABLED === "true" && !!env.GEMINI_API_KEY)
+          ? (t, p) => classify(env, t, p, {
+              language: state.language,
+              product: state.recommendedProduct || state.product,
+            })
           : null,
       );
   const now = Date.now(),

@@ -4,6 +4,8 @@ import {
   messageLanguage, requestedUnlistedTitle, appreciation, discountEnquiry,
 } from "./language.mjs";
 import { discoverBooks, discoveryReply } from "./discovery.mjs";
+import { languagePreference, wantsOneRecommendation, recommendationFollowup,
+  recommendedBookReply, bookFollowupReply } from "./conversation.mjs";
 export { bnDigits, normalize } from "./language.mjs";
 export function phone(text) {
   const p = bnDigits(text)
@@ -58,7 +60,18 @@ const helpBanglish = "BOOKS, DELIVERY, ba HUMAN likhte paren.";
 const helpBangla = "বইয়ের তালিকার জন্য BOOKS, ডেলিভারির জন্য DELIVERY, বা সহায়তার জন্য HUMAN লিখুন.";
 export async function transition(previous, text, products, ai) {
   const s = structuredClone(previous || { step: "browse" });
-  s.language = messageLanguage(text, s.language);
+  // Explicit language choice survives follow-ups and reset. Customer language
+  // switches must not change a pending checkout or confirm any order.
+  const choice = languagePreference(text);
+  if (choice === "auto") {
+    delete s.languageLock;
+    s.language = messageLanguage(text, s.language);
+  } else if (choice) {
+    s.language = choice;
+    s.languageLock = choice;
+  } else {
+    s.language = s.languageLock || messageLanguage(text, s.language);
+  }
   const l = s.language,
     t = normalize(text);
   let engine = "rules";
@@ -81,7 +94,7 @@ export async function transition(previous, text, products, ai) {
 
   if (t === "reset" || t === "restart" || t === "নতুন") {
     return {
-      state: { step: "browse", language: l },
+      state: { step: "browse", language: l, ...(s.languageLock ? { languageLock: s.languageLock } : {}) },
       reply: select(l,
         "Conversation reset. Type BOOKS to browse.",
         "Conversation reset hoyeche. Boi dekhte BOOKS likhun.",
@@ -108,6 +121,19 @@ export async function transition(previous, text, products, ai) {
       ),
       silent: true,
     };
+  if (choice) {
+    if (choice === "auto") return say(
+      "I'll follow the language of your next message.",
+      "Ekhon theke apnar message-er language follow korbo.",
+      "এখন থেকে আপনার বার্তার ভাষা অনুযায়ী উত্তর দেব।",
+    );
+    return say(
+      "Sure! I'll reply in English from now on.",
+      "Thik ache! Ekhon theke Banglish-e reply dibo.",
+      "অবশ্যই! এখন থেকে বাংলায় উত্তর দেব।",
+    );
+  }
+
   // Common sales questions must never be mistaken for book names.
   // Handle discounts while browsing or reviewing an order without changing
   // any price, stock, selection, or pending confirmation.
@@ -324,6 +350,39 @@ export async function transition(previous, text, products, ai) {
     "Shagotom! Aro kichu jante chan?",
     "আপনাকে স্বাগতম! আর কিছু জানতে চান?",
   );
+  // A recommendation for ONE book should pick ONE available D1 title and
+  // preserve it as conversational context (never authorize checkout).
+  if (wantsOneRecommendation(text)) {
+    const discovered = discoverBooks(text, products);
+    const candidates = discovered?.matches?.length
+      ? discovered.matches
+      : discovered && discovered.totalMatches === 0
+        ? []
+        : products.filter((p) => Number(p.stock) > 0)
+          .sort((a, b) => Number(a.price) - Number(b.price) || a.title.localeCompare(b.title));
+    if (!candidates.length) {
+      delete s.product;
+      delete s.recommendedProduct;
+      return say(
+        "I couldn't find a suitable in-stock book. Type BOOKS to see what is available.",
+        "Matching boi stock-e nei. BOOKS likhe available boi dekhun.",
+        "উপযুক্ত বই মজুত নেই। BOOKS লিখে অন্য বইগুলো দেখুন।",
+      );
+    }
+    const p = candidates[0];
+    s.product = p.id;
+    s.recommendedProduct = p.id;
+    return { state: s, reply: recommendedBookReply(p, l), engine };
+  }
+  if (s.recommendedProduct && recommendationFollowup(text)) {
+    const p = products.find((p) => p.id === s.recommendedProduct && Number(p.stock) > 0);
+    if (p) return { state: s, reply: bookFollowupReply(p, text, l), engine };
+    delete s.recommendedProduct;
+    delete s.product;
+    return say("That title is unavailable now. Type BOOKS to browse.");
+  }
+
+  let conversationReply = null;
   let intent = enquiryIntent(text);
   const policy = ["delivery", "returns", "payment", "discount"].includes(intent);
   let found = policy ? [] : matchingProducts(text, products);
@@ -335,6 +394,7 @@ export async function transition(previous, text, products, ai) {
   if (discovery && (!found.length || discovery.author || discovery.budget ||
       discovery.cheap || discovery.recommend || explicitBrowse)) {
     delete s.product;
+    delete s.recommendedProduct;
     return { state: s, reply: discoveryReply(discovery, l), engine };
   }
   if (found.length > 1)
@@ -346,6 +406,7 @@ export async function transition(previous, text, products, ai) {
     ? requestedUnlistedTitle(text) : null;
   if (unlisted) {
     delete s.product;
+    delete s.recommendedProduct;
     const title = unlisted.replace(/\b[a-z]/g, (char) => char.toUpperCase());
     return say(
       title + " is not listed right now. Type BOOKS to see available titles.",
@@ -380,13 +441,27 @@ export async function transition(previous, text, products, ai) {
           "payment",
           "order",
           "greeting",
+          "smalltalk",
+          "explain_book",
           "unknown",
         ].includes(result.intent)
       ) {
         intent = result.intent;
         if (intent === "product")
           found = products.filter((p) => p.id === result.product_id);
-        engine = "cloudflare-ai";
+        if (result.intent === "smalltalk" && typeof result.reply === "string") {
+          conversationReply = result.reply;
+        }
+        if (result.intent === "explain_book") {
+          const chosen = products.find((p) =>
+            p.id === (result.product_id || s.recommendedProduct || s.product));
+          if (chosen) {
+            s.product = chosen.id;
+            s.recommendedProduct = chosen.id;
+            return { state: s, reply: bookFollowupReply(chosen, text, l), engine: result.provider || "cloudflare-ai" };
+          }
+        }
+        engine = result.provider || "cloudflare-ai";
       }
     } catch {
       engine = "rules-fallback";
@@ -395,6 +470,7 @@ export async function transition(previous, text, products, ai) {
   if (found.length) {
     const p = found[0];
     s.product = p.id;
+    s.recommendedProduct = p.id;
     if (!p.stock)
       return say(
         `${p.title} is currently out of stock. Type books for alternatives.`,
@@ -425,6 +501,9 @@ export async function transition(previous, text, products, ai) {
       return say("That book is out of stock. Type books for alternatives.");
     s.step = "quantity";
     return say("How many copies?", "Koy copy niben?", "কত কপি নেবেন?");
+  }
+  if (intent === "smalltalk" && typeof conversationReply === "string") {
+    return { state: s, reply: conversationReply, engine };
   }
   if (intent === "delivery")
     return say(
