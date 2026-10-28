@@ -113,7 +113,7 @@ test("HELP offers a clear menu in the right language without interrupting checko
   const bn = await transition(null, "সাহায্য", products, noAI);
   assert.match(bn.reply, /বই দেখতে BOOKS/);
   const bl = await transition({ step: "browse", language: "bl" }, "menu", products, noAI);
-  assert.match(bl.reply, /BookHarbor demo-te/);
+  assert.match(bl.reply, /DELIVERY ba HUMAN likhte paren/);
   const duringOrder = await transition({ step: "quantity", product: "hobbit" }, "help", products, noAI);
   assert.equal(duringOrder.state.step, "quantity");
   assert.match(duringOrder.reply, /How many copies/);
