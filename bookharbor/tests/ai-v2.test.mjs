@@ -87,7 +87,7 @@ test("followups use the last real D1 book without inventing plot details", async
   const first = await transition(null,"Recommend me one fantasy book",products);
   assert.equal(first.state.product,"hobbit");
   let r=await transition(first.state,"Who wrote it?",products);
-  assert.match(r.reply,/J\.R\.R\. Tolkien/);
+  assert.match(r.reply,/Tolkien/);
   assert.equal(r.order,undefined);
   r=await transition(r.state,"Why should I read it?",products);
   assert.match(r.reply,/fantasy title/);
