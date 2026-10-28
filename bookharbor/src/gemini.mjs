@@ -14,7 +14,13 @@ export function geminiEligible(text) {
   if (/\d{5,}/.test(t)) return false;
   if (/\b(?:confirm|buy|purchase|checkout|place an order|order now|refund|cancel order)\b/i.test(t))
     return false;
-  return true;
+  // Privacy-first: only known short store queries and narrow small-talk may
+  // leave Cloudflare. An arbitrary personal narrative is never forwarded.
+  const shopQuestion = /\b(?:book|books|boi|title|author|novel|fantasy|fiction|manga|mis|recommend|suggest|story|read|reading|bilbo|adventure|textbook|catalog|price|available|about it|who wrote it|tell me about|something mysterious)\b/i.test(t) ||
+    /(?:বই|বইটি|লেখক|দাম|ফ্যান্টাসি|সাজেস্ট|পড়তে|পড়তে)/u.test(t);
+  const smalltalk = /^(?:how are you|how s your day|how is your day|what can you do|are you a bot|who are you|nice to meet you|how is it going)$/i.test(
+    t.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim());
+  return shopQuestion || smalltalk;
 }
 
 export function parseGeminiClassification(payload, products) {
